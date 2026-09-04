@@ -1,0 +1,50 @@
+import { and, eq } from 'drizzle-orm'
+import { reports, reportVersions, projects } from '../../database/schema'
+import { createReportSchema } from '#shared/schemas/report'
+
+// POST /api/reports — create a draft with its first (unsubmitted) version.
+export default defineEventHandler(async (event) => {
+  const session = requireUser(event)
+  const body = await validateBody(event, createReportSchema)
+  const database = useDatabase()
+
+  if (body.projectId) {
+    const [project] = await database
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.id, body.projectId))
+    if (!project) {
+      throw createError({ statusCode: 422, statusMessage: 'Unknown project' })
+    }
+  }
+
+  const [existing] = await database
+    .select({ id: reports.id })
+    .from(reports)
+    .where(and(eq(reports.userId, session.id), eq(reports.weekStart, body.weekStart)))
+  if (existing) {
+    throw createError({ statusCode: 409, statusMessage: 'You already have a report for this week' })
+  }
+
+  const report = await database.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(reports)
+      .values({
+        userId: session.id,
+        projectId: body.projectId,
+        weekStart: body.weekStart,
+        weekEnd: body.weekEnd,
+        status: 'DRAFT',
+      })
+      .returning()
+    await tx.insert(reportVersions).values({
+      reportId: created.id,
+      versionNo: 1,
+      ...body.content,
+    })
+    return created
+  })
+
+  setResponseStatus(event, 201)
+  return { report }
+})

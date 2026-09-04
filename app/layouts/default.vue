@@ -7,7 +7,11 @@
       </NuxtLink>
 
       <div v-if="user" class="flex items-center gap-3">
-        <span class="hidden text-sm text-ink-500 sm:block">{{ user.name }}</span>
+        <nav class="hidden items-center gap-4 text-sm sm:flex">
+          <NuxtLink v-if="user.role === 'MANAGER'" to="/review" class="text-ink-500 hover:text-body">Review queue</NuxtLink>
+          <NuxtLink to="/reports" class="text-ink-500 hover:text-body">Reports</NuxtLink>
+        </nav>
+        <span class="hidden text-sm text-ink-500 md:block">{{ user.name }}</span>
         <span
           class="border px-2 py-0.5 font-mono text-[11px] tracking-wide uppercase"
           :class="user.role === 'MANAGER'
