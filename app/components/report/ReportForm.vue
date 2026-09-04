@@ -109,12 +109,12 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-8">
-    <p v-if="issues.length" role="alert" class="border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+    <div v-if="issues.length" role="alert" class="border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
       <span class="font-medium">Fix before saving:</span>
       <ul class="mt-1 list-disc pl-5">
         <li v-for="(issue, i) in issues" :key="i">{{ issue }}</li>
       </ul>
-    </p>
+    </div>
 
     <!-- Week & project -->
     <section class="grid gap-5 sm:grid-cols-3">
