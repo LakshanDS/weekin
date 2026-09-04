@@ -1,0 +1,62 @@
+erDiagram
+    USERS ||--o{ REPORTS : "writes"
+    USERS ||--o{ REVIEW_COMMENTS : "writes as manager"
+    PROJECTS ||--o{ REPORTS : "categorizes"
+    PROJECTS ||--o{ PROJECT_MEMBERS : ""
+    USERS ||--o{ PROJECT_MEMBERS : "assigned to"
+    REPORTS ||--o{ REPORT_VERSIONS : "has snapshots"
+    REPORT_VERSIONS ||--o{ REVIEW_COMMENTS : "commented against"
+
+    USERS {
+        serial id PK
+        varchar name
+        varchar email UK
+        text password_hash
+        user_role role "MEMBER | MANAGER"
+        timestamptz created_at
+    }
+    PROJECTS {
+        serial id PK
+        varchar name UK
+        text description
+        timestamptz created_at
+    }
+    PROJECT_MEMBERS {
+        serial id PK
+        integer project_id FK
+        integer user_id FK
+    }
+    REPORTS {
+        serial id PK
+        integer user_id FK
+        integer project_id FK "nullable, SET NULL"
+        date week_start "Monday, unique per user"
+        date week_end "Friday"
+        report_status status "DRAFT | SUBMITTED | NEEDS_CORRECTION | APPROVED"
+        timestamptz submitted_at
+        timestamptz reviewed_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    REPORT_VERSIONS {
+        serial id PK
+        integer report_id FK
+        integer version_no "increments per submit"
+        jsonb tasks "name, priority, planned vs actual pct, status, time, deliverable"
+        jsonb next_week_tasks
+        jsonb blockers "text + isKey flag"
+        jsonb achievements "text + isKey flag"
+        jsonb hours_by_type "development, testing, meetings, documentation"
+        text notes
+        timestamptz submitted_at "null = draft in progress"
+        timestamptz created_at
+    }
+    REVIEW_COMMENTS {
+        serial id PK
+        integer report_id FK
+        integer version_id FK "version the comment was made against"
+        integer manager_id FK
+        review_action action "REQUEST_CHANGES | APPROVE"
+        text comment
+        timestamptz created_at
+    }

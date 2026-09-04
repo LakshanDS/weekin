@@ -13,6 +13,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     databaseUrl: '',
     jwtSecret: '',
+    // AI assistant (any OpenAI-compatible API). Key empty = offline mode.
+    aiApiKey: '',
+    aiBaseUrl: 'https://api.openai.com/v1',
+    aiModel: 'gpt-4o-mini',
   },
 
   app: {
