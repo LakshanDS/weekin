@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm'
-import { users } from '../../db/schema'
+import { users } from '../../database/schema'
 import { requireUser } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   const session = requireUser(event)
-  const db = useDb()
+  const database = useDatabase()
 
-  const [user] = await db
+  const [user] = await database
     .select({ id: users.id, name: users.name, email: users.email, role: users.role })
     .from(users)
     .where(eq(users.id, session.id))

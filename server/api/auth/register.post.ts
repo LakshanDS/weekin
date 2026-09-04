@@ -1,19 +1,19 @@
 import { eq } from 'drizzle-orm'
-import { users } from '../../db/schema'
+import { users } from '../../database/schema'
 import { registerSchema } from '#shared/schemas/auth'
 import { hashPassword, setSessionCookie } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   const body = await validateBody(event, registerSchema)
-  const db = useDb()
+  const database = useDatabase()
   const email = body.email.toLowerCase()
 
-  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email))
+  const [existing] = await database.select({ id: users.id }).from(users).where(eq(users.email, email))
   if (existing) {
     throw createError({ statusCode: 409, statusMessage: 'Email is already registered' })
   }
 
-  const [user] = await db
+  const [user] = await database
     .insert(users)
     .values({
       name: body.name,

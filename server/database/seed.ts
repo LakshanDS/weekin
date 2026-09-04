@@ -1,6 +1,6 @@
 // Seed: 1 manager, 5 members, 4 projects, 6 weeks of reports in mixed statuses.
 // Deterministic content (no Math.random) so re-seeding gives the same demo data.
-// Run: bun server/db/seed.ts   (bun auto-loads .env)
+// Run: bun server/database/seed.ts   (bun auto-loads .env)
 
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -22,7 +22,7 @@ import type {
   TaskStatus,
 } from '../../shared/types/report'
 
-const db = drizzle(postgres(process.env.NUXT_DATABASE_URL!, { max: 1 }), {
+const database = drizzle(postgres(process.env.NUXT_DATABASE_URL!, { max: 1 }), {
   schema: { users, projects, projectMembers, reports, reportVersions, reviewComments },
 })
 
@@ -183,21 +183,21 @@ async function main() {
   console.log('Seeding…')
 
   // Wipe in FK-safe order — keeps the seed idempotent
-  await db.delete(reviewComments)
-  await db.delete(reportVersions)
-  await db.delete(reports)
-  await db.delete(projectMembers)
-  await db.delete(projects)
-  await db.delete(users)
+  await database.delete(reviewComments)
+  await database.delete(reportVersions)
+  await database.delete(reports)
+  await database.delete(projectMembers)
+  await database.delete(projects)
+  await database.delete(users)
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10)
 
-  const [manager] = await db
+  const [manager] = await database
     .insert(users)
     .values({ name: 'Ruwan Jayasuriya', email: 'manager@demo.io', passwordHash, role: 'MANAGER' })
     .returning()
 
-  const members = await db
+  const members = await database
     .insert(users)
     .values(
       [
@@ -211,7 +211,7 @@ async function main() {
     .returning()
   const memberIdx = new Map(members.map((m, i) => [m.email, i]))
 
-  const projectRows = await db
+  const projectRows = await database
     .insert(projects)
     .values([
       { name: 'Client A Portal', description: 'Customer-facing portal for Client A' },
@@ -221,7 +221,7 @@ async function main() {
     ])
     .returning()
 
-  await db.insert(projectMembers).values([
+  await database.insert(projectMembers).values([
     { projectId: projectRows[0].id, userId: members[0].id },
     { projectId: projectRows[1].id, userId: members[0].id },
     { projectId: projectRows[0].id, userId: members[1].id },
@@ -238,7 +238,7 @@ async function main() {
 
   for (const member of members) {
     const mi = memberIdx.get(member.email)!
-    const memberProjects = await db
+    const memberProjects = await database
       .select({ projectId: projectMembers.projectId })
       .from(projectMembers)
       .where(eq(projectMembers.userId, member.id))
@@ -256,7 +256,7 @@ async function main() {
       )
       const draft = kind === 'D'
 
-      const [report] = await db
+      const [report] = await database
         .insert(reports)
         .values({
           userId: member.id,
@@ -273,7 +273,7 @@ async function main() {
       reportCount++
 
       const insertVersion = (revised: boolean, submitted: boolean) =>
-        db
+        database
           .insert(reportVersions)
           .values({
             reportId: report.id,
@@ -294,7 +294,7 @@ async function main() {
       versionCount++
 
       if (kind === 'AC' || kind === 'NC') {
-        await db.insert(reviewComments).values({
+        await database.insert(reviewComments).values({
           reportId: report.id,
           versionId: v1.id,
           managerId: manager.id,
@@ -310,7 +310,7 @@ async function main() {
         versionCount++
         const approveComment = pick(APPROVE_COMMENTS, mi + wi)
         if (approveComment) {
-          await db.insert(reviewComments).values({
+          await database.insert(reviewComments).values({
             reportId: report.id,
             versionId: v2.id,
             managerId: manager.id,
@@ -325,7 +325,7 @@ async function main() {
       if (kind === 'A') {
         const approveComment = pick(APPROVE_COMMENTS, mi * 3 + wi)
         if (approveComment) {
-          await db.insert(reviewComments).values({
+          await database.insert(reviewComments).values({
             reportId: report.id,
             versionId: v1.id,
             managerId: manager.id,

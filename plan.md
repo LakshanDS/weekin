@@ -66,7 +66,7 @@ Technical assignment for Sisenco Digital (Pvt) Ltd — Full-stack Developer posi
 
 ```
 server/
-  db/
+  database/
     schema.ts          -- drizzle table definitions
     index.ts           -- postgres.js + drizzle client
     seed.ts            -- 5 members + several weeks, mixed statuses
