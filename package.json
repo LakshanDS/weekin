@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "bun server/database/seed.ts",
     "test": "vitest run",
-    "build:cf": "NITRO_PRESET=cloudflare_module nuxt build"
+    "build:cf": "NITRO_PRESET=cloudflare_module nuxt build",
+    "dev:cf": "bun scripts/sync-dev-vars.mjs && bunx wrangler dev --port 8787"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
