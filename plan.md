@@ -9,9 +9,10 @@ Technical assignment for Sisenco Digital (Pvt) Ltd — Full-stack Developer posi
 |---|---|---|
 | Frontend | Nuxt 4 (Vue 3, Vite) | Vue is on their preferred list; one framework to defend live |
 | Backend | Nitro server routes (Node.js) | Full-stack Nuxt = one deploy, one setup; `server/` structured as controllers/services/middleware |
-| DB | PostgreSQL + Prisma | Industry standard; Neon free tier for the bonus deploy |
+| DB | PostgreSQL + Drizzle ORM (drizzle-kit migrations, postgres.js) | Industry standard, explicit SQL you can defend live; Neon free tier for the bonus deploy |
 | Auth | JWT in httpOnly cookie + bcrypt | No magic deps; every line explainable live |
 | Charts | Chart.js + vue-chartjs | Recharts is React-only |
+| Validation | zod — shared schemas (`shared/`) used by API (`readValidatedBody`) and client forms | One source of truth for request + form validation |
 | Tests | Vitest (RBAC integration tests) | Explicitly "strongly recommended" |
 | AI (bonus) | Chat widget → `/api/ai/chat` → LLM API with report context | Viewed favorably |
 
@@ -64,20 +65,33 @@ Technical assignment for Sisenco Digital (Pvt) Ltd — Full-stack Developer posi
 ## Data model
 
 ```
-users(id, name, email, passwordHash, role[MEMBER|MANAGER], createdAt)
-projects(id, name, description, createdAt)
-project_members(projectId, userId)            -- optional assignment feature
-reports(id, userId, projectId, weekStart, weekEnd,
+server/
+  db/
+    schema.ts          -- drizzle table definitions
+    index.ts           -- postgres.js + drizzle client
+    seed.ts            -- 5 members + several weeks, mixed statuses
+drizzle/               -- generated SQL migrations (drizzle-kit)
+```
+
+Tables:
+```
+users(id, name, email unique, passwordHash, role[MEMBER|MANAGER], createdAt)
+projects(id, name unique, description, createdAt)
+project_members(projectId, userId, unique(projectId, userId))   -- optional feature
+reports(id, userId → users, projectId → projects, weekStart, weekEnd,
         status[DRAFT|SUBMITTED|NEEDS_CORRECTION|APPROVED],
-        currentVersionId, submittedAt, reviewedAt, createdAt, updatedAt)
-report_versions(id, reportId, versionNo,
+        currentVersionId → report_versions, submittedAt, reviewedAt, createdAt, updatedAt)
+report_versions(id, reportId → reports, versionNo,
         tasks Jsonb           [{name, priority, plannedPct, actualPct, status, timePlannedH, timeSpentH, deliverable}],
         nextWeekTasks Jsonb   [string],
         blockers Jsonb        [{text, isKey}],
         achievements Jsonb    [{text, isKey}],
         hoursByType Jsonb     {development, testing, meetings, documentation},
-        notes, createdAt)     -- snapshot per submit → version history for free
-review_comments(id, reportId, versionId, managerId, comment, createdAt)
+        notes, submittedAt (null = draft-in-progress, invisible to managers), createdAt)
+        -- draft edits update the latest unsubmitted row in place; every submit freezes it
+review_comments(id, reportId → reports, versionId → report_versions, managerId → users,
+        action[REQUEST_CHANGES|APPROVE], comment, createdAt)
+-- latest version per report is derived (max versionNo), not denormalized
 ```
 
 ## API surface
@@ -96,7 +110,7 @@ review_comments(id, reportId, versionId, managerId, comment, createdAt)
 
 | Day | Goal |
 |---|---|
-| 1 Thu | Scaffold: Nuxt 4 + Prisma + Postgres (docker-compose), auth + RBAC middleware, seed data |
+| 1 Thu | Scaffold: Nuxt 4 + Drizzle + Postgres (docker-compose), auth + RBAC middleware, seed data |
 | 2 Fri | Reports CRUD, statuses, submit/approve/request-changes, version snapshots |
 | 3 Sat | Manager dashboard (metrics + charts + filters), team week view, projects CRUD |
 | 4 Sun | User management, member profile, activity feed, form validation, RBAC tests |
@@ -112,3 +126,4 @@ review_comments(id, reportId, versionId, managerId, comment, createdAt)
 
 ## Setup log
 - Project home: `F:\Projects\SF-Assignment` (repo root = this folder)
+- Docker Desktop NOT available on this PC → PostgreSQL 18 installed natively (Windows service), Neon reserved for the bonus deploy
