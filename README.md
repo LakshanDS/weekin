@@ -155,6 +155,26 @@ All routes under `/api`, JSON, cookie-authenticated. List endpoints support pagi
 
 🛡 manager-only. Every report route re-checks ownership: members can never read or write another member's report (404, no existence leak), managers can review but never rewrite report content.
 
+## Deploying to Cloudflare (Workers)
+
+The Nuxt server layer targets Cloudflare Workers via Nitro's `cloudflare_module` preset (configured in `wrangler.jsonc`, `nodejs_compat` enabled). The database client is Workers-compatible: `prepare: false` plus per-request clients, since Workers forbids I/O objects crossing request boundaries. Verified locally under `wrangler dev` (workerd) against a live PostgreSQL.
+
+```bash
+bun run build:cf       # NITRO_PRESET=cloudflare_module nuxt build
+bunx wrangler dev      # local preview on the Workers runtime
+bunx wrangler deploy   # after `wrangler login`
+```
+
+On Cloudflare, set secrets instead of `.env`:
+
+```bash
+bunx wrangler secret put NUXT_DATABASE_URL   # e.g. a Neon pooled connection string
+bunx wrangler secret put NUXT_JWT_SECRET
+bunx wrangler secret put NUXT_AI_API_KEY
+```
+
+For production traffic, add a [Hyperdrive](https://developers.cloudflare.com/hyperdrive/) binding in front of the same Postgres — the app needs no code change, only the connection string it reads.
+
 ## Assignment compliance map
 
 - Auth & roles, fixed report structure, review/correction workflow with version history — Sections 1–3
