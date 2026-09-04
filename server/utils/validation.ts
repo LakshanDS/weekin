@@ -1,4 +1,4 @@
-import type { z } from 'zod'
+import { z } from 'zod'
 
 // Validate a request body with a shared zod schema; respond 422 with field errors.
 export async function validateBody<S extends z.ZodType>(
