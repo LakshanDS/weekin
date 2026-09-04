@@ -29,6 +29,7 @@
     "@nuxt/test-utils": "^4.2.0",
     "@tailwindcss/vite": "^4.3.3",
     "drizzle-kit": "^0.31.10",
+    "fontkit": "^2.0.4",
     "tailwindcss": "^4.3.3",
     "vitest": "^5.0.0"
   }
