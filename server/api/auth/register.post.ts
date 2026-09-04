@@ -4,6 +4,7 @@ import { registerSchema } from '#shared/schemas/auth'
 import { hashPassword, setSessionCookie } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
+  rateLimit(`register:${clientIp(event)}`, 10, 60 * 60_000)
   const body = await validateBody(event, registerSchema)
   const database = useDatabase()
   const email = body.email.toLowerCase()

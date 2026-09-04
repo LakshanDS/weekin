@@ -12,7 +12,9 @@ const chatSchema = z.object({
 // POST /api/ai/chat — manager Q&A over team report data (grounded RAG-lite:
 // the week window's reports are injected as context; the model answers only from it).
 export default defineEventHandler(async (event) => {
-  await requireManager(event)
+  const session = await requireManager(event)
+  // Each call bills the shared LLM key — keep the burn rate bounded.
+  rateLimit(`ai:${session.id}`, 20, 60_000)
   const body = await validateBody(event, chatSchema)
   const context = await buildTeamContext()
 

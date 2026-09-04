@@ -4,6 +4,7 @@ import { loginSchema } from '#shared/schemas/auth'
 import { verifyPassword, setSessionCookie } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
+  rateLimit(`login:${clientIp(event)}`, 20, 5 * 60_000)
   const body = await validateBody(event, loginSchema)
   const database = useDatabase()
 
