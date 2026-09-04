@@ -31,11 +31,11 @@ Source of truth: [`tokens.json`](./tokens.json).
 
 | Role | Font | Notes |
 |---|---|---|
-| Brand / display | **Fredoka** (Google Fonts, free, OFL) | Wordmark (SemiBold 600), headings 500–700. Rounded, friendly, chunky. |
+| Brand / display | **Fredoka** (Google Fonts, free, OFL) | Wordmark (Bold 700), headings 500–700. Rounded, friendly, chunky. |
 | Body / UI | **Public Sans** | Neutral, legible; lets Fredoka carry personality. |
 | Data / labels | **IBM Plex Mono** | Eyebrows, form labels, status tags, timestamps — uppercase with wide tracking. |
 
-All three load from Google Fonts. Fredoka source used for the logo: `logo/Fredoka-SemiBold.ttf` (SIL OFL license).
+All three load from Google Fonts. Fredoka source used for the logo: `(logo/Fredoka-Bold.ttf)` (SIL OFL license).
 
 ## Logo
 
