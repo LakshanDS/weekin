@@ -2,6 +2,7 @@
 definePageMeta({ role: 'MANAGER' })
 
 const { user: me } = useAuth()
+const { confirm } = useConfirm()
 
 interface UserRow {
   id: number
@@ -50,9 +51,14 @@ const invite = () =>
 const setRole = (user: UserRow, role: 'MEMBER' | 'MANAGER') =>
   run(() => $fetch(`/api/users/${user.id}`, { method: 'PUT', body: { role } }))
 
-const remove = (user: UserRow) => {
-  if (!window.confirm(`Remove ${user.name}? Their account and all their reports will be deleted.`)) return false
-  return run(() => $fetch(`/api/users/${user.id}`, { method: 'DELETE' }))
+async function remove(user: UserRow) {
+  const ok = await confirm({
+    title: 'Remove member',
+    message: `Remove ${user.name}? Their account and all their reports will be deleted.`,
+    confirmLabel: 'Remove',
+    tone: 'danger',
+  })
+  if (ok) await run(() => $fetch(`/api/users/${user.id}`, { method: 'DELETE' }))
 }
 
 const dt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })

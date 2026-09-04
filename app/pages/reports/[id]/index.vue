@@ -4,6 +4,7 @@ import type { ReportContent as ReportContentType, ReportStatus } from '#shared/t
 const route = useRoute()
 const reportId = Number(route.params.id)
 const { user } = useAuth()
+const { confirm } = useConfirm()
 const isManager = computed(() => user.value?.role === 'MANAGER')
 const isOwner = computed(() => detail.value?.report.userId === user.value?.id)
 
@@ -93,9 +94,14 @@ const requestChanges = () =>
     changeComment.value = ''
   })
 
-function deleteReport() {
-  if (!window.confirm('Delete this report? This cannot be undone.')) return
-  run(() => $fetch(`/api/reports/${reportId}`, { method: 'DELETE' })).then(() => navigateTo('/reports'))
+async function deleteReport() {
+  const ok = await confirm({
+    title: 'Delete report',
+    message: 'Delete this report? This cannot be undone.',
+    confirmLabel: 'Delete',
+    tone: 'danger',
+  })
+  if (ok) await run(() => $fetch(`/api/reports/${reportId}`, { method: 'DELETE' })).then(() => navigateTo('/reports'))
 }
 
 const latestCorrection = computed(() =>

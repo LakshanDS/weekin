@@ -9,6 +9,7 @@ interface Project {
 
 const projects = ref<Project[]>([])
 const loading = ref(true)
+const { confirm } = useConfirm()
 const name = ref('')
 const description = ref('')
 const editingId = ref<number | null>(null)
@@ -57,12 +58,19 @@ const saveEdit = (id: number) =>
     await load()
   })
 
-const remove = (project: Project) => {
-  if (!window.confirm(`Delete project "${project.name}"? Its reports will be kept as "No project".`)) return
-  run(async () => {
-    await $fetch(`/api/projects/${project.id}`, { method: 'DELETE' })
-    await load()
+async function remove(project: Project) {
+  const ok = await confirm({
+    title: 'Delete project',
+    message: `Delete "${project.name}"? Its reports will be kept as "No project".`,
+    confirmLabel: 'Delete',
+    tone: 'danger',
   })
+  if (ok) {
+    await run(async () => {
+      await $fetch(`/api/projects/${project.id}`, { method: 'DELETE' })
+      await load()
+    })
+  }
 }
 </script>
 
