@@ -14,7 +14,7 @@ const chatSchema = z.object({
 export default defineEventHandler(async (event) => {
   const session = await requireManager(event)
   // Each call bills the shared LLM key — keep the burn rate bounded.
-  rateLimit(`ai:${session.id}`, 20, 60_000)
+  rateLimit(`ai:${session.id}`, 15, 60_000)
   const body = await validateBody(event, chatSchema)
   const context = await buildTeamContext()
 
