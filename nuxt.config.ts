@@ -8,8 +8,24 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   vite: { plugins: [tailwindcss()] },
 
+  components: [{ path: '~/components', pathPrefix: false }],
+
   runtimeConfig: {
     databaseUrl: '',
     jwtSecret: '',
+  },
+
+  app: {
+    head: {
+      titleTemplate: (title) => (title ? `${title} · WeekLog` : 'WeekLog'),
+      link: [
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap',
+        },
+      ],
+    },
   },
 })

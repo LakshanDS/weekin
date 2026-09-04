@@ -1,1 +1,72 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: "Bricolage Grotesque", "Public Sans", sans-serif;
+  --font-body: "Public Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-ink-900: #14212b;
+  --color-ink-700: #1e3242;
+  --color-ink-500: #47617a;
+  --color-paper: #f3f6f5;
+  --color-line: #dbe3e0;
+  --color-body: #17252e;
+
+  --color-approved: #1f8a5a;
+  --color-submitted: #2f6fde;
+  --color-correction: #d97e00;
+  --color-draft: #93a1ad;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-body);
+  background: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-approved) 25%, transparent);
+}
+
+/* Load-in for the signature pipeline — disabled for reduced motion */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.95) rotate(-6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+.rise {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stamp {
+  animation: stamp 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .stamp {
+    animation: none;
+  }
+}
