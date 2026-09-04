@@ -165,6 +165,8 @@ bunx wrangler dev      # local preview on the Workers runtime
 bunx wrangler deploy   # after `wrangler login`
 ```
 
+Continuous deployment runs through GitHub Actions (`.github/workflows/deploy.yml`): every push runs the integration tests against a real Postgres service container, and pushes to `main` build with the Workers preset and deploy via `wrangler`. Add two repository secrets to enable the deploy job: `CLOUDFLARE_API_TOKEN` (Workers deploy permission) and `CLOUDFLARE_ACCOUNT_ID`.
+
 On Cloudflare, set secrets instead of `.env`:
 
 ```bash
