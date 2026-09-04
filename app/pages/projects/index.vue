@@ -57,11 +57,13 @@ const saveEdit = (id: number) =>
     await load()
   })
 
-const remove = (project: Project) =>
+const remove = (project: Project) => {
+  if (!window.confirm(`Delete project "${project.name}"? Its reports will be kept as "No project".`)) return
   run(async () => {
     await $fetch(`/api/projects/${project.id}`, { method: 'DELETE' })
     await load()
   })
+}
 </script>
 
 <template>

@@ -93,6 +93,11 @@ const requestChanges = () =>
     changeComment.value = ''
   })
 
+function deleteReport() {
+  if (!window.confirm('Delete this report? This cannot be undone.')) return
+  run(() => $fetch(`/api/reports/${reportId}`, { method: 'DELETE' })).then(() => navigateTo('/reports'))
+}
+
 const latestCorrection = computed(() =>
   detail.value?.comments.filter((c) => c.action === 'REQUEST_CHANGES').at(-1),
 )
@@ -152,7 +157,7 @@ const latestCorrection = computed(() =>
 
         <NuxtLink v-if="isOwner && (detail.report.status === 'DRAFT' || detail.report.status === 'NEEDS_CORRECTION')"
           href="#" class="cursor-pointer text-sm text-correction hover:underline"
-          @click.prevent="run(() => $fetch(`/api/reports/${reportId}`, { method: 'DELETE' })).then(() => navigateTo('/reports'))">
+          @click.prevent="deleteReport()">
           Delete
         </NuxtLink>
       </div>
