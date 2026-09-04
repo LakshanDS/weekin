@@ -44,7 +44,7 @@ onMounted(async () => {
     <p v-if="error" class="border border-correction/40 bg-correction/10 px-4 py-3 text-correction">{{ error }}</p>
 
     <template v-else-if="profile">
-      <NuxtLink to="/users" class="font-mono text-[11px] tracking-widest text-ink-500 uppercase hover:text-body">← All members</NuxtLink>
+      <NuxtLink to="/members" class="font-mono text-[11px] tracking-widest text-ink-500 uppercase hover:text-body">← All members</NuxtLink>
       <h1 class="mt-2 font-display text-3xl font-bold tracking-tight">{{ profile.member.name }}</h1>
       <p class="mt-1 text-ink-500">{{ profile.member.email }} · joined {{ new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(profile.member.createdAt)) }}</p>
 

@@ -58,7 +58,7 @@ onMounted(load)
         <tbody>
           <tr v-for="row in rows" :key="row.userId" class="border-b border-line/60 last:border-0">
             <td class="px-4 py-3 font-medium">
-              <NuxtLink :to="`/team/${row.userId}`" class="underline decoration-approved decoration-2 underline-offset-2">
+              <NuxtLink :to="`/members/${row.userId}`" class="underline decoration-approved decoration-2 underline-offset-2">
                 {{ row.name }}
               </NuxtLink>
             </td>

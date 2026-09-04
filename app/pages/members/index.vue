@@ -50,7 +50,10 @@ const invite = () =>
 const setRole = (user: UserRow, role: 'MEMBER' | 'MANAGER') =>
   run(() => $fetch(`/api/users/${user.id}`, { method: 'PUT', body: { role } }))
 
-const remove = (user: UserRow) => run(() => $fetch(`/api/users/${user.id}`, { method: 'DELETE' }))
+const remove = (user: UserRow) => {
+  if (!window.confirm(`Remove ${user.name}? Their account and all their reports will be deleted.`)) return false
+  return run(() => $fetch(`/api/users/${user.id}`, { method: 'DELETE' }))
+}
 
 const dt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 </script>
@@ -99,7 +102,7 @@ const dt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', ye
         <tbody>
           <tr v-for="user in users" :key="user.id" class="border-b border-line/60 last:border-0">
             <td class="px-4 py-3 font-medium">
-              <NuxtLink v-if="user.role === 'MEMBER'" :to="`/team/${user.id}`" class="underline decoration-approved decoration-2 underline-offset-2">
+              <NuxtLink v-if="user.role === 'MEMBER'" :to="`/members/${user.id}`" class="underline decoration-approved decoration-2 underline-offset-2">
                 {{ user.name }}
               </NuxtLink>
               <span v-else>{{ user.name }}</span>

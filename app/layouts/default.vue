@@ -11,8 +11,8 @@
           <template v-if="user.role === 'MANAGER'">
             <NuxtLink to="/dashboard" class="text-ink-500 hover:text-body">Dashboard</NuxtLink>
             <NuxtLink to="/review" class="text-ink-500 hover:text-body">Review queue</NuxtLink>
-            <NuxtLink to="/team/week" class="text-ink-500 hover:text-body">Team week</NuxtLink>
-            <NuxtLink to="/users" class="text-ink-500 hover:text-body">Members</NuxtLink>
+            <NuxtLink to="/team" class="text-ink-500 hover:text-body">Team</NuxtLink>
+            <NuxtLink to="/members" class="text-ink-500 hover:text-body">Members</NuxtLink>
             <NuxtLink to="/projects" class="text-ink-500 hover:text-body">Projects</NuxtLink>
           </template>
           <NuxtLink to="/reports" class="text-ink-500 hover:text-body">Reports</NuxtLink>
