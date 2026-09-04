@@ -155,6 +155,9 @@ describe('report review cycle & RBAC', () => {
     const actions = detail.json.comments.map((c: any) => [c.action, c.versionNo])
     expect(actions).toContainEqual(['REQUEST_CHANGES', 1])
     expect(actions).toContainEqual(['APPROVE', 2])
+
+    // leave no trace: managers can remove even approved reports (moderation delete)
+    expect((await call('DELETE', `/reports/${reportId}`, manager)).status).toBe(200)
   })
 
   it('exposes manager-only endpoints to managers only', async () => {
