@@ -8,9 +8,9 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "database:generate": "drizzle-kit generate",
-    "database:migrate": "drizzle-kit migrate",
-    "database:seed": "bun server/database/seed.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "bun server/database/seed.ts",
     "test": "vitest run"
   },
   "dependencies": {
