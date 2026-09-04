@@ -19,9 +19,9 @@ Technical assignment for Sisenco Digital (Pvt) Ltd — Full-stack Developer posi
 ## Requirement checklist (from the assignment PDF)
 
 ### 1. Auth & roles
-- [ ] Register / login / logout, hashed passwords, JWT session cookie
-- [ ] Roles: `MEMBER` (own reports only) / `MANAGER` (all reports, review actions)
-- [ ] Role assignment: at signup user picks Member; manager accounts via seed / admin panel
+- [x] Register / login / logout, hashed passwords, JWT session cookie
+- [x] Roles: `MEMBER` (own reports only) / `MANAGER` (all reports, review actions)
+- [x] Role assignment: signup always MEMBER; manager via seed (admin panel = user management page)
 
 ### 2. Personal weekly report (fixed structure for everyone)
 - [ ] Fields: week range · project tag · task table (name, priority, planned% vs actual%, status, time planned vs spent, deliverable) · next week plan · blockers (flag key) · achievements (flag key) · hours by type (optional) · notes/links
@@ -58,7 +58,7 @@ Technical assignment for Sisenco Digital (Pvt) Ltd — Full-stack Developer posi
 ## Scope floor (from "Scope & Difficulty Expectations")
 - [ ] ≥7 pages on real backend data
 - [ ] Full cycle demo-able: submit → needs correction → edit → resubmit → approve
-- [ ] Seed: 5 members + several weeks, mixed statuses
+- [x] Seed: 5 members + 6 weeks, mixed statuses (28 reports / 33 versions / 20 comments)
 - [ ] ≥1 RBAC automated test
 - [ ] Deployed link (bonus — Vercel + Neon, decide Day 5)
 

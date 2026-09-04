@@ -316,7 +316,7 @@ async function main() {
             managerId: manager.id,
             action: 'APPROVE',
             comment: approveComment,
-            createdAt: addDays(week.weekEnd, 2) + 'T15:00:00Z',
+            createdAt: new Date(`${addDays(week.weekEnd, 2)}T15:00:00Z`),
           })
           commentCount++
         }
