@@ -88,7 +88,8 @@ CREATE DATABASE weekly_reports OWNER weekly_app;
 
 ```bash
 bun run db:migrate   # apply SQL migrations from drizzle/
-bun run db:seed      # demo data: 1 manager + 5 members + 6 weeks of reports in mixed statuses
+ALLOW_DEMO_SEED=1 bun run db:seed   # demo data: 1 manager + 5 members + 6 weeks of reports in mixed statuses
+                                    # (guard prevents accidentally wiping a real database)
 ```
 
 ### 6. Run the app (frontend + backend together)

@@ -3,7 +3,7 @@ import { projects, reports, reportVersions, users } from '../../../database/sche
 
 // GET /api/team/:id — one member's profile: basic stats + report history (manager only)
 export default defineEventHandler(async (event) => {
-  requireManager(event)
+  await requireManager(event)
   const id = Number(getRouterParam(event, 'id'))
   const database = useDatabase()
 

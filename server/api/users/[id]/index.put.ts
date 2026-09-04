@@ -8,7 +8,7 @@ const updateSchema = z.object({
 
 // PUT /api/users/:id — change a user's role (manager only)
 export default defineEventHandler(async (event) => {
-  const session = requireManager(event)
+  const session = await requireManager(event)
   const id = Number(getRouterParam(event, 'id'))
   const body = await validateBody(event, updateSchema)
   const database = useDatabase()

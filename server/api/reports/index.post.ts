@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import { reports, reportVersions, projects } from '../../database/schema'
 import { createReportSchema } from '#shared/schemas/report'
+import { addDaysIso, mondayOf } from '#shared/utils/week'
 
 // POST /api/reports — create a draft with its first (unsubmitted) version.
 export default defineEventHandler(async (event) => {
@@ -18,10 +19,15 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Weeks are normalised server-side: always Monday..Friday, so team views
+  // and the one-report-per-week rule can't be dodged with custom dates.
+  const weekStart = mondayOf(body.weekStart)
+  const weekEnd = addDaysIso(weekStart, 4)
+
   const [existing] = await database
     .select({ id: reports.id })
     .from(reports)
-    .where(and(eq(reports.userId, session.id), eq(reports.weekStart, body.weekStart)))
+    .where(and(eq(reports.userId, session.id), eq(reports.weekStart, weekStart)))
   if (existing) {
     throw createError({ statusCode: 409, statusMessage: 'You already have a report for this week' })
   }
@@ -32,8 +38,8 @@ export default defineEventHandler(async (event) => {
       .values({
         userId: session.id,
         projectId: body.projectId,
-        weekStart: body.weekStart,
-        weekEnd: body.weekEnd,
+        weekStart,
+        weekEnd,
         status: 'DRAFT',
       })
       .returning()

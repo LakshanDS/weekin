@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { reports, reportVersions, users, projects } from '../database/schema'
 import type { ReportContent } from '#shared/types/report'
@@ -76,14 +76,21 @@ export async function saveContent(
   content: ReportContent,
 ) {
   const latest = await getLatestVersion(database, reportId)
+
   if (latest && latest.submittedAt === null) {
-    await database
+    // Guarded update: if the version was frozen (submitted) between our read
+    // and write, the WHERE matches nothing and we fall through to a new version.
+    const updated = await database
       .update(reportVersions)
       .set({ ...content })
-      .where(eq(reportVersions.id, latest.id))
-    await database.update(reports).set({ projectId, updatedAt: new Date() }).where(eq(reports.id, reportId))
-    return latest.id
+      .where(and(eq(reportVersions.id, latest.id), isNull(reportVersions.submittedAt)))
+      .returning({ id: reportVersions.id })
+    if (updated.length) {
+      await database.update(reports).set({ projectId, updatedAt: new Date() }).where(eq(reports.id, reportId))
+      return updated[0].id
+    }
   }
+
   const [created] = await database
     .insert(reportVersions)
     .values({ reportId, versionNo: (latest?.versionNo ?? 0) + 1, ...content })

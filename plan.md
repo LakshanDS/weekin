@@ -111,7 +111,7 @@ review_comments(id, reportId → reports, versionId → report_versions, manager
 
 ## Setup log
 - Project home: `F:\Projects\SF-Assignment` (repo root)
-- PostgreSQL 18 native (service `postgresql-x64-18`); superuser password `postgres2026` (also in user AGENTS.md); app role `weekly_app` / `weekly_app_dev`, DB `weekly_reports`
+- PostgreSQL 18 native (service `postgresql-x64-18`); superuser password reset (recorded locally in user AGENTS.md, not in this repo); app role `weekly_app` / `weekly_app_dev`, DB `weekly_reports`
 - No Docker on this machine; Neon reserved for the Cloudflare deploy
 - Dev: `bun run dev` · Workers preview: `bun run dev:cf` (:8787) · Tests: `bun run test` (needs dev server running)
 - Port 3000 sometimes occupied by another app — Nuxt auto-falls back; confirm port from the dev log

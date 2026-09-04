@@ -1,4 +1,7 @@
+import { eq } from 'drizzle-orm'
 import { SignJWT, jwtVerify } from 'jose'
+import { users } from '../database/schema'
+import { useDatabase } from './database'
 import bcrypt from 'bcryptjs'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
@@ -37,7 +40,9 @@ export async function setSessionCookie(event: H3Event, user: SessionUser) {
   setCookie(event, SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    // 'development' check (not ==production): Cloudflare never sets NODE_ENV,
+    // and the cookie must be Secure in every non-dev runtime.
+    secure: process.env.NODE_ENV !== 'development',
     path: '/',
     maxAge: 60 * 60 * 24 * SESSION_DAYS,
   })
@@ -67,9 +72,19 @@ export function requireUser(event: H3Event): SessionUser {
   return user
 }
 
-export function requireManager(event: H3Event): SessionUser {
+export async function requireManager(event: H3Event): Promise<SessionUser> {
   const user = requireUser(event)
   if (user.role !== 'MANAGER') {
+    throw createError({ statusCode: 403, statusMessage: 'Manager access required' })
+  }
+  // The JWT is stateless: re-check the account still exists and is still a
+  // manager, so removed or demoted accounts lose manager access immediately.
+  const database = useDatabase()
+  const [current] = await database
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, user.id))
+  if (!current || current.role !== 'MANAGER') {
     throw createError({ statusCode: 403, statusMessage: 'Manager access required' })
   }
   return user

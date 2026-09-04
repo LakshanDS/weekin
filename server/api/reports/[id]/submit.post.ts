@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { reports, reportVersions } from '../../../database/schema'
 import { loadReportFor, getLatestVersion } from '../../../utils/reports'
 
@@ -19,6 +19,15 @@ export default defineEventHandler(async (event) => {
 
   const now = new Date()
   await database.transaction(async (tx) => {
+    // Claim the transition first: blocks double-submit and submit racing a review.
+    const claimed = await tx
+      .update(reports)
+      .set({ status: 'SUBMITTED', submittedAt: now, updatedAt: now })
+      .where(and(eq(reports.id, report.id), inArray(reports.status, ['DRAFT', 'NEEDS_CORRECTION'])))
+      .returning({ id: reports.id })
+    if (claimed.length === 0) {
+      throw createError({ statusCode: 409, statusMessage: 'Only a draft or corrected report can be submitted' })
+    }
     if (latest.submittedAt === null) {
       await tx.update(reportVersions).set({ submittedAt: now }).where(eq(reportVersions.id, latest.id))
     } else {
@@ -31,10 +40,6 @@ export default defineEventHandler(async (event) => {
         submittedAt: now,
       })
     }
-    await tx
-      .update(reports)
-      .set({ status: 'SUBMITTED', submittedAt: now, updatedAt: now })
-      .where(eq(reports.id, report.id))
   })
 
   return { ok: true, status: 'SUBMITTED' }

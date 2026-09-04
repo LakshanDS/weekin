@@ -12,7 +12,7 @@ const createUserSchema = z.object({
 
 // POST /api/users — admin creates an account directly ("invite") (manager only)
 export default defineEventHandler(async (event) => {
-  requireManager(event)
+  await requireManager(event)
   const body = await validateBody(event, createUserSchema)
   const database = useDatabase()
   const email = body.email.toLowerCase()

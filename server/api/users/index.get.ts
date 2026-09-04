@@ -3,7 +3,7 @@ import { users } from '../../database/schema'
 
 // GET /api/users — full user list (manager only)
 export default defineEventHandler(async (event) => {
-  requireManager(event)
+  await requireManager(event)
   const database = useDatabase()
   return {
     users: await database

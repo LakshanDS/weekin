@@ -3,7 +3,7 @@ import { users } from '../../../database/schema'
 
 // DELETE /api/users/:id — remove a team member and their reports (manager only)
 export default defineEventHandler(async (event) => {
-  const session = requireManager(event)
+  const session = await requireManager(event)
   const id = Number(getRouterParam(event, 'id'))
   const database = useDatabase()
 

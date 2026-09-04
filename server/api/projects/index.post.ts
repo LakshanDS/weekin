@@ -9,7 +9,7 @@ const projectSchema = z.object({
 
 // POST /api/projects — create (manager only)
 export default defineEventHandler(async (event) => {
-  requireManager(event)
+  await requireManager(event)
   const body = await validateBody(event, projectSchema)
   const database = useDatabase()
 

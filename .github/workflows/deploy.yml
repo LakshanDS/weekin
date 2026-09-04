@@ -26,6 +26,7 @@ jobs:
     env:
       NUXT_DATABASE_URL: postgres://weekly_app:weekly_app_dev@localhost:5432/weekly_reports
       NUXT_JWT_SECRET: ci-secret-not-for-production
+      ALLOW_DEMO_SEED: '1'
     steps:
       - uses: actions/checkout@v4
 

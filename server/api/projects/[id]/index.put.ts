@@ -9,7 +9,7 @@ const projectSchema = z.object({
 
 // PUT /api/projects/:id — rename / edit description (manager only)
 export default defineEventHandler(async (event) => {
-  requireManager(event)
+  await requireManager(event)
   const id = Number(getRouterParam(event, 'id'))
   const body = await validateBody(event, projectSchema)
   const database = useDatabase()

@@ -180,6 +180,11 @@ const PLAN: Record<string, (string | null)[]> = {
 const LATE_WEEKS = new Set(['bob@demo.io:3', 'chatura@demo.io:4'])
 
 async function main() {
+  // The seed WIPES all data and installs known demo credentials — require intent.
+  if (process.env.ALLOW_DEMO_SEED !== '1') {
+    console.error('Refusing to seed: this deletes all data. Re-run with ALLOW_DEMO_SEED=1.')
+    process.exit(1)
+  }
   console.log('Seeding…')
 
   // Wipe in FK-safe order — keeps the seed idempotent

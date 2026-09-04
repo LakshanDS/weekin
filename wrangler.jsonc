@@ -12,11 +12,12 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "NUXT_JWT_SECRET": "set-me-in-dashboard-or-secret",
-    "NUXT_AI_API_KEY": "",
     "NUXT_AI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/openai",
     "NUXT_AI_MODEL": "gemini-3.5-flash-lite"
   }
+  // Secrets (NUXT_DATABASE_URL, NUXT_JWT_SECRET, NUXT_AI_API_KEY) must come
+  // from `wrangler secret put` — never committed as vars. The app fails
+  // closed if NUXT_JWT_SECRET is unset.
   // NUXT_DATABASE_URL should be a secret (real deploy):
   //   bunx wrangler secret put NUXT_DATABASE_URL
   // Optional speed-up later: a Hyperdrive binding in front of the same Postgres.
