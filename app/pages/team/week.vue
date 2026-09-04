@@ -57,7 +57,11 @@ onMounted(load)
         </thead>
         <tbody>
           <tr v-for="row in rows" :key="row.userId" class="border-b border-line/60 last:border-0">
-            <td class="px-4 py-3 font-medium">{{ row.name }}</td>
+            <td class="px-4 py-3 font-medium">
+              <NuxtLink :to="`/team/${row.userId}`" class="underline decoration-approved decoration-2 underline-offset-2">
+                {{ row.name }}
+              </NuxtLink>
+            </td>
             <td class="px-4 py-3">
               <StatusTag v-if="row.report" :status="row.report.status" />
               <span v-else class="font-mono text-[11px] tracking-wider text-draft uppercase">Not started</span>
