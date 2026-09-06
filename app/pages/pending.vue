@@ -8,7 +8,10 @@ const { user, fetchMe, logout } = useAuth()
 let timer: ReturnType<typeof setInterval> | undefined
 
 async function poll() {
+  const last = user.value
   await fetchMe(true)
+  // fetchMe nulls the user on any failure; keep the last known one on screen.
+  user.value ??= last
   if (user.value?.status === 'ACTIVE') {
     stopPolling()
     await navigateTo('/', { replace: true })

@@ -21,9 +21,15 @@ const dt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', ye
 
 async function load() {
   loading.value = true
-  const res = await $fetch<{ users: UserRow[] }>('/api/users')
-  users.value = res.users
-  loading.value = false
+  try {
+    const res = await $fetch<{ users: UserRow[] }>('/api/users')
+    users.value = res.users
+  } catch (err) {
+    const e = err as { data?: { statusMessage?: string } }
+    error.value = e.data?.statusMessage ?? 'Could not load members.'
+  } finally {
+    loading.value = false
+  }
 }
 onMounted(load)
 

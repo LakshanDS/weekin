@@ -20,9 +20,15 @@ const dt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', ye
 
 async function load() {
   loading.value = true
-  const res = await $fetch<{ projects: Project[] }>('/api/projects')
-  projects.value = res.projects
-  loading.value = false
+  try {
+    const res = await $fetch<{ projects: Project[] }>('/api/projects')
+    projects.value = res.projects
+  } catch (err) {
+    const e = err as { data?: { statusMessage?: string } }
+    error.value = e.data?.statusMessage ?? 'Could not load projects.'
+  } finally {
+    loading.value = false
+  }
 }
 onMounted(load)
 
