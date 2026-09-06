@@ -5,7 +5,7 @@ import { users } from '../../database/schema'
 // picker. Any signed-in member can list them (names only, no emails).
 export default defineEventHandler(async (event) => {
   await requireUser(event)
-  const database = useDatabase()
+  const database = useDatabase(event)
   return {
     managers: await database
       .select({ id: users.id, name: users.name })

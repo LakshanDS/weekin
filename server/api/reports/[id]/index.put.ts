@@ -4,8 +4,7 @@ import { loadReportFor, saveContent, validateAssignedManager } from '../../../ut
 // PUT /api/reports/:id — owner edits content while DRAFT or NEEDS_CORRECTION.
 // Managers can never rewrite report content.
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  const { session, database, report } = await loadReportFor(event, Number(id))
+  const { session, database, report } = await loadReportFor(event, parseIdParam(event))
 
   if (session.role === 'MANAGER' && report.userId !== session.id) {
     throw createError({ statusCode: 403, statusMessage: 'Managers cannot edit report content' })

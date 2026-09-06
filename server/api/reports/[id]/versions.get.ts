@@ -1,20 +1,24 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq, isNotNull } from 'drizzle-orm'
 import { reportVersions } from '../../../database/schema'
 import { loadReportFor } from '../../../utils/reports'
 
 // GET /api/reports/:id/versions — past versions of this report.
 // Managers see submitted versions only; the owner also sees draft-in-progress.
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  const { database, isOwner } = await loadReportFor(event, Number(id))
+  const id = parseIdParam(event)
+  const { database, isOwner } = await loadReportFor(event, id)
 
-  const rows = await database
-    .select()
+  // Visibility rule in SQL; metadata columns only — JSONB content stays out.
+  const versions = await database
+    .select({
+      id: reportVersions.id,
+      versionNo: reportVersions.versionNo,
+      submittedAt: reportVersions.submittedAt,
+      createdAt: reportVersions.createdAt,
+    })
     .from(reportVersions)
-    .where(eq(reportVersions.reportId, Number(id)))
+    .where(isOwner ? eq(reportVersions.reportId, id) : and(eq(reportVersions.reportId, id), isNotNull(reportVersions.submittedAt)))
     .orderBy(asc(reportVersions.versionNo))
 
-  return {
-    versions: isOwner ? rows : rows.filter((v) => v.submittedAt !== null),
-  }
+  return { versions }
 })
