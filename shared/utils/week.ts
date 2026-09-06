@@ -22,3 +22,12 @@ export function currentWeekRange(): { weekStart: string; weekEnd: string } {
   const monday = mondayOf(toIsoDate(new Date()))
   return { weekStart: monday, weekEnd: addDaysIso(monday, 4) }
 }
+
+// ISO week number for a Monday-start week
+export function isoWeekOf(mondayIso: string): number {
+  const d = new Date(`${mondayIso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 3) // Thursday of that week
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4))
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - ((firstThursday.getUTCDay() + 6) % 7) + 3)
+  return 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 864e5))
+}

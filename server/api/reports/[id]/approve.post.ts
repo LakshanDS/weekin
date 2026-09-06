@@ -30,15 +30,14 @@ export default defineEventHandler(async (event) => {
     if (claimed.length === 0) {
       throw createError({ statusCode: 409, statusMessage: 'Report is no longer awaiting review' })
     }
-    if (body.comment) {
-      await tx.insert(reviewComments).values({
-        reportId: report.id,
-        versionId: version!.id,
-        managerId: session.id,
-        action: 'APPROVE',
-        comment: body.comment,
-      })
-    }
+    // Always record the approval so the timeline shows it, even without a message.
+    await tx.insert(reviewComments).values({
+      reportId: report.id,
+      versionId: version!.id,
+      managerId: session.id,
+      action: 'APPROVE',
+      comment: body.comment ?? null,
+    })
   })
 
   return { ok: true, status: 'APPROVED' }

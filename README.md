@@ -120,16 +120,16 @@ bun run preview
 
 | Role | Email | Password |
 |---|---|---|
-| Manager | `manager@demo.io` | `password123` |
+| Manager | `manager@demo.io` (also `manager2@demo.io`) | `password123` |
 | Member | `alice@demo.io` (also bob, chatura, dilini, ethan @demo.io) | `password123` |
 
-The seed generates six weeks of reports per member across every workflow status, including full correction cycles (v1 → manager comment → v2 → approved), late submissions, drafts, and not-started weeks, so the dashboard is meaningful immediately.
+The seed generates six weeks of reports per member across every workflow status, including full correction cycles (v1 → manager comment → v2 → approved), late submissions, drafts, and not-started weeks, so the dashboard is meaningful immediately. Members alternate between the two managers to demo the assigned-manager flow.
 
 ## Feature tour
 
-**Team member**: register → My Reports → New report (task table with priority/planned-vs-actual %/time/deliverable, next-week plan, blockers and achievements with a "key" flag, hours by type, notes) → Save draft → Submit for review. When a report comes back, the manager's comment appears on the report; edit and resubmit — every submitted version stays in the history.
+**Team member**: register → My Reports → New report (task table with priority/planned-vs-actual %/time/deliverable, next-week plan, blockers and achievements with a "key" flag, hours by type, notes, assigned manager) → Save draft → Submit for review. When a report comes back, the manager's comment appears on the report; edit and resubmit — every submitted version stays in the history.
 
-**Manager**: Dashboard (weekly compliance, open blockers, needs-correction count, task trend, status by member, hours by project and task type, activity feed) → Review queue → open a submitted report → Approve, or Request changes with a comment tied to the version under review → the member can view past versions side by side with the current one. Also: Team week view (all members' key blockers/achievements side by side), Members (roles, invites, removal), Projects (CRUD), and the AI assistant chat.
+**Manager**: Dashboard (weekly compliance, open blockers, needs-correction count, task trend, status by member, hours by project and task type, activity feed) → Review queue (reports assigned to you sort first) → open a submitted report → Approve, or Request changes with a comment tied to the version under review → the member can view past versions side by side with the current one. Any manager can review any report; the assigned one is flagged. Also: Team week view (all members' key blockers/achievements side by side), Members (roles, invites, removal), Projects (CRUD), and the AI assistant chat.
 
 ## AI assistant
 
@@ -151,10 +151,12 @@ All routes under `/api`, JSON, cookie-authenticated. List endpoints support pagi
 | Dashboard | `GET /dashboard` 🛡 |
 | Team | `GET /team/week` 🛡, `GET /team/:id` 🛡 |
 | Projects | `GET /projects`, `POST /projects` 🛡, `PUT/DELETE /projects/:id` 🛡 |
-| Users | `GET/POST /users` 🛡, `PUT/DELETE /users/:id` 🛡 |
+| Users | `GET/POST /users` 🛡, `PUT/DELETE /users/:id` 🛡 (`PUT {status:'ACTIVE'}` approves a signup) |
 | AI | `POST /ai/chat` 🛡 |
 
 🛡 manager-only. Every report route re-checks ownership: members can never read or write another member's report (404, no existence leak), managers can review but never rewrite report content.
+
+Self-registered accounts start as `PENDING`: they see a waiting screen and every workspace API rejects them (403) until a manager approves them from the Members page. Manager-invited accounts are active immediately.
 
 ## Deploying to Cloudflare (Workers)
 

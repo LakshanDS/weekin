@@ -1,5 +1,5 @@
 import { updateReportContentSchema } from '#shared/schemas/report'
-import { loadReportFor, saveContent } from '../../../utils/reports'
+import { loadReportFor, saveContent, validateAssignedManager } from '../../../utils/reports'
 
 // PUT /api/reports/:id — owner edits content while DRAFT or NEEDS_CORRECTION.
 // Managers can never rewrite report content.
@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await validateBody(event, updateReportContentSchema)
-  const versionId = await saveContent(database, report.id, body.projectId, body.content)
+  await validateAssignedManager(database, body.assignedManagerId)
+  const versionId = await saveContent(database, report.id, body.projectId, body.assignedManagerId, body.content)
   return { ok: true, versionId }
 })

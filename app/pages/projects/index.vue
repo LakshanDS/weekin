@@ -5,17 +5,18 @@ interface Project {
   id: number
   name: string
   description: string | null
+  createdAt: string
+  reportCount: number
 }
 
 const projects = ref<Project[]>([])
 const loading = ref(true)
-const { confirm } = useConfirm()
-const name = ref('')
-const description = ref('')
-const editingId = ref<number | null>(null)
-const editName = ref('')
-const editDescription = ref('')
 const error = ref('')
+const { confirm } = useConfirm()
+
+const search = ref('')
+
+const dt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
 async function load() {
   loading.value = true
@@ -37,24 +38,47 @@ async function run(action: () => Promise<unknown>) {
   }
 }
 
-const create = () =>
-  run(async () => {
-    await $fetch('/api/projects', { method: 'POST', body: { name: name.value, description: description.value || null } })
-    name.value = ''
-    description.value = ''
-    await load()
-  })
+// create & edit share one modal
+const showModal = ref(false)
+const editing = ref<Project | null>(null)
+const form = ref({ name: '', description: '' })
 
-const startEdit = (project: Project) => {
-  editingId.value = project.id
-  editName.value = project.name
-  editDescription.value = project.description ?? ''
+function openCreate() {
+  editing.value = null
+  form.value = { name: '', description: '' }
+  showModal.value = true
 }
 
-const saveEdit = (id: number) =>
+function openEdit(project: Project) {
+  editing.value = project
+  form.value = { name: project.name, description: project.description ?? '' }
+  showModal.value = true
+}
+
+function onModalKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') showModal.value = false
+}
+
+watch(showModal, (open) => {
+  if (!import.meta.client) return
+  if (open) {
+    window.addEventListener('keydown', onModalKey)
+    nextTick(() => document.getElementById('project-name')?.focus())
+  } else {
+    window.removeEventListener('keydown', onModalKey)
+  }
+})
+onUnmounted(() => window.removeEventListener('keydown', onModalKey))
+
+const save = () =>
   run(async () => {
-    await $fetch(`/api/projects/${id}`, { method: 'PUT', body: { name: editName.value, description: editDescription.value || null } })
-    editingId.value = null
+    const body = { name: form.value.name, description: form.value.description || null }
+    if (editing.value) {
+      await $fetch(`/api/projects/${editing.value.id}`, { method: 'PUT', body })
+    } else {
+      await $fetch('/api/projects', { method: 'POST', body })
+    }
+    showModal.value = false
     await load()
   })
 
@@ -72,53 +96,236 @@ async function remove(project: Project) {
     })
   }
 }
+
+const filtered = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return projects.value
+  return projects.value.filter((p) => `${p.name} ${p.description ?? ''}`.toLowerCase().includes(q))
+})
+
+const totalReports = computed(() => projects.value.reduce((n, p) => n + p.reportCount, 0))
+const unusedCount = computed(() => projects.value.filter((p) => p.reportCount === 0).length)
+const newestCreated = computed(() => {
+  const last = [...projects.value].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+  return last ? dt.format(new Date(last.createdAt)) : '—'
+})
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl">
-    <h1 class="font-display text-3xl font-bold tracking-tight">Projects</h1>
-    <p class="mt-1 text-ink-500">Categories the team attaches to weekly reports.</p>
+  <div>
+    <!-- Briefing band -->
+    <section class="pt-4">
+      <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
+        <div class="min-w-0 flex-1">
+          <h1
+            class="rise text-[18px] sm:text-[clamp(24px,2.6vw,30px)] leading-[1.08] font-bold tracking-[-0.025em]"
+            style="animation-delay: 0.12s"
+          >
+            Projects<span class="text-coral">.</span>
+          </h1>
+          <p
+            v-if="!loading"
+            class="rise mt-1.5 max-w-[560px] text-[13px] leading-[1.5] text-ink-soft sm:text-[14px]"
+            style="animation-delay: 0.22s"
+          >
+            <template v-if="projects.length === 0">
+              No projects yet — create the first one to start attaching reports.
+            </template>
+            <template v-else>
+              <b class="font-semibold text-ink">{{ projects.length }} project{{ projects.length > 1 ? 's' : '' }}</b>
+              {{ projects.length > 1 ? 'are' : 'is' }} open for the team,
+              <b class="font-semibold text-ink">{{ totalReports }} report{{ totalReports === 1 ? '' : 's' }}</b>
+              attached in total.<template v-if="unusedCount">
+                <b class="font-semibold text-ink"> {{ unusedCount }}</b> {{ unusedCount > 1 ? 'have' : 'has' }} no reports yet.</template>
+            </template>
+          </p>
+        </div>
 
-    <p v-if="error" role="alert" class="mt-4 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
-      {{ error }}
-    </p>
+        <div v-if="!loading" class="rise flex shrink-0 flex-col items-end gap-1 text-right" style="animation-delay: 0.1s">
+          <p class="font-mono text-[13px] font-semibold tracking-[0.15em] uppercase text-ink">
+            {{ projects.length }} project{{ projects.length === 1 ? '' : 's' }}
+          </p>
+          <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
+            {{ totalReports }} report{{ totalReports === 1 ? '' : 's' }} attached
+          </p>
+          <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
+            newest {{ newestCreated }}
+          </p>
+        </div>
+      </div>
+    </section>
 
-    <!-- Create -->
-    <form class="mt-6 flex flex-wrap items-end gap-3 border border-line bg-white p-4" @submit.prevent="create">
-      <label class="flex-1">
-        <span class="mb-1.5 block font-mono text-[11px] tracking-widest text-ink-500 uppercase">New project</span>
-        <input v-model="name" placeholder="e.g. Client B Migration" class="block w-full border border-line px-3 py-2 text-sm outline-none focus:border-approved" />
-      </label>
-      <label class="flex-1">
-        <span class="mb-1.5 block font-mono text-[11px] tracking-widest text-ink-500 uppercase">Description (optional)</span>
-        <input v-model="description" placeholder="What is it about?" class="block w-full border border-line px-3 py-2 text-sm outline-none focus:border-approved" />
-      </label>
-      <button type="submit" class="cursor-pointer bg-approved px-4 py-2 text-sm font-semibold text-white hover:bg-approved/90">Add project</button>
-    </form>
+    <p v-if="loading" class="rise mt-8 font-mono text-sm text-ink-muted">Loading projects…</p>
 
-    <!-- List -->
-    <div class="mt-4 border border-line bg-white">
-      <p v-if="loading" class="px-4 py-8 text-center text-ink-500">Loading…</p>
-      <p v-else-if="projects.length === 0" class="px-4 py-8 text-center text-ink-500">No projects yet — add the first one above.</p>
-      <ul v-else>
-        <li v-for="project in projects" :key="project.id" class="flex flex-wrap items-center gap-3 border-b border-line/60 px-4 py-3 last:border-0">
-          <template v-if="editingId === project.id">
-            <input v-model="editName" class="flex-1 border border-line px-2.5 py-1.5 text-sm outline-none focus:border-approved" />
-            <input v-model="editDescription" placeholder="Description" class="flex-1 border border-line px-2.5 py-1.5 text-sm outline-none focus:border-approved" />
-            <button class="cursor-pointer bg-approved px-3 py-1.5 text-sm font-medium text-white" @click="saveEdit(project.id)">Save</button>
-            <button class="cursor-pointer border border-line px-3 py-1.5 text-sm" @click="editingId = null">Cancel</button>
-          </template>
-          <template v-else>
-            <div class="min-w-48 flex-1">
-              <p class="text-sm font-medium">{{ project.name }}</p>
-              <p v-if="project.description" class="text-xs text-ink-500">{{ project.description }}</p>
+    <template v-else>
+      <!-- Filters: search · add project -->
+      <div class="rise mt-5 flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
+        <input
+          v-model="search"
+          type="search"
+          placeholder="Search name or description…"
+          aria-label="Search projects"
+          class="block w-full rounded-md border border-ink-subtle bg-white px-3.5 py-2 text-[13.5px] outline-none transition-colors placeholder:text-ink-muted hover:border-[#d0d0d0] focus:border-ink focus:ring-[3px] focus:ring-coral-tint sm:w-56"
+        >
+
+        <p class="min-w-0 flex-1 font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
+          {{ filtered.length }} shown
+        </p>
+
+        <button
+          type="button"
+          class="cursor-pointer rounded-[10px] bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a]"
+          @click="openCreate"
+        >
+          New project
+        </button>
+      </div>
+
+      <p v-if="error" role="alert" class="mt-4 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+        {{ error }}
+      </p>
+
+      <!-- List -->
+      <section class="mt-6">
+        <div v-if="filtered.length" class="border-t border-ink-subtle">
+          <div
+            v-for="project in filtered"
+            :key="project.id"
+            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_110px_110px_auto]"
+          >
+            <span class="min-w-0">
+              <b class="block truncate text-sm font-semibold">{{ project.name }}</b>
+              <span class="block truncate text-[12px] text-ink-muted">{{ project.description ?? 'No description' }}</span>
+            </span>
+
+            <span class="hidden text-[13px] text-ink-soft sm:block" title="Reports attached to this project">
+              {{ project.reportCount }} report{{ project.reportCount === 1 ? '' : 's' }}
+            </span>
+
+            <span class="hidden font-mono text-xs whitespace-nowrap text-ink-muted sm:block">
+              {{ dt.format(new Date(project.createdAt)) }}
+            </span>
+
+            <span class="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-soft transition-colors hover:border-ink-subtle hover:text-ink"
+                @click="openEdit(project)"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-correction transition-colors hover:border-correction/30 hover:bg-coral/10"
+                @click="remove(project)"
+              >
+                Delete
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div
+          v-else-if="projects.length === 0"
+          class="flex flex-col items-center gap-3 border-t border-ink-subtle py-12 text-center"
+        >
+          <span
+            class="flex size-12 items-center justify-center rounded-full bg-ink-tint font-mono text-lg text-ink-muted"
+            aria-hidden="true"
+          >
+            +
+          </span>
+          <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
+            No projects yet
+          </p>
+          <p class="max-w-[400px] text-[14px] leading-[1.5] text-ink-soft">
+            Projects are the categories the team attaches to weekly reports. Create the first one with
+            the button above.
+          </p>
+        </div>
+
+        <p v-else class="border-t border-ink-subtle py-8 text-center text-sm text-ink-muted">
+          No projects match the current search.
+        </p>
+      </section>
+    </template>
+
+    <!-- Create / edit modal -->
+    <Teleport to="body">
+      <div
+        v-if="showModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 p-4"
+        @click.self="showModal = false"
+      >
+        <form
+          role="dialog"
+          aria-modal="true"
+          :aria-label="editing ? 'Edit project' : 'New project'"
+          class="rise w-full max-w-lg rounded-[6px] border border-ink-subtle bg-white p-6 shadow-2xl"
+          @submit.prevent="save"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink-muted">
+              {{ editing ? 'Edit project' : 'New project' }}
+            </p>
+            <button
+              type="button"
+              title="Close"
+              aria-label="Close"
+              class="-m-1 flex size-7 shrink-0 cursor-pointer items-center justify-center text-ink-muted transition-colors hover:text-coral"
+              @click="showModal = false"
+            >
+              <svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <p v-if="error" role="alert" class="mt-4 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+            {{ error }}
+          </p>
+
+          <div class="mt-4 grid gap-4">
+            <div>
+              <label for="project-name" class="mb-2 block font-mono text-[10.5px] tracking-[0.15em] uppercase text-ink-muted">Name</label>
+              <input
+                id="project-name"
+                v-model="form.name"
+                required
+                placeholder="e.g. Client B Migration"
+                autocomplete="off"
+                class="block w-full rounded-md border border-ink-subtle bg-white px-3.5 py-2.5 text-[15px] outline-none transition-colors placeholder:text-ink-muted hover:border-[#d0d0d0] focus:border-ink focus:ring-[3px] focus:ring-coral-tint"
+              >
             </div>
-            <button class="cursor-pointer border border-line px-3 py-1.5 text-sm hover:border-ink-500" @click="startEdit(project)">Edit</button>
-            <button class="cursor-pointer border border-correction/40 px-3 py-1.5 text-sm text-correction hover:bg-correction/10" @click="remove(project)">Delete</button>
-          </template>
-        </li>
-      </ul>
-    </div>
-    <p class="mt-3 font-mono text-[11px] text-draft">Deleting a project keeps its reports — they just show “No project”.</p>
+            <div>
+              <label for="project-description" class="mb-2 block font-mono text-[10.5px] tracking-[0.15em] uppercase text-ink-muted">Description <span class="normal-case tracking-normal">(optional)</span></label>
+              <input
+                id="project-description"
+                v-model="form.description"
+                placeholder="What is it about?"
+                autocomplete="off"
+                class="block w-full rounded-md border border-ink-subtle bg-white px-3.5 py-2.5 text-[15px] outline-none transition-colors placeholder:text-ink-muted hover:border-[#d0d0d0] focus:border-ink focus:ring-[3px] focus:ring-coral-tint"
+              >
+            </div>
+          </div>
+          <div class="mt-6 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              class="cursor-pointer rounded-[10px] border border-ink-subtle px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-ink-tint"
+              @click="showModal = false"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="cursor-pointer rounded-[10px] bg-ink px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a]"
+            >
+              {{ editing ? 'Save changes' : 'Create project' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </Teleport>
   </div>
 </template>

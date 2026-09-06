@@ -13,6 +13,9 @@ node_modules
 logs
 *.log
 
+# Design concepts (scratch)
+concepts/
+
 # Misc
 .DS_Store
 .fleet
@@ -27,3 +30,10 @@ logs
 # Cloudflare
 .wrangler
 .output
+
+# Local-only working files
+quality-check.md
+plan.md
+scripts/
+docs/
+.github/

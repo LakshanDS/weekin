@@ -1,36 +1,21 @@
 <script setup lang="ts">
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-} from 'chart.js'
-import { Bar } from 'vue-chartjs'
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
-
+// Hours-by-project bars from the Morning Brief concept: label + hours over a
+// rounded track, fill relative to the largest project.
 const props = defineProps<{ rows: { name: string; hours: number }[] }>()
 
-const chartData = computed(() => ({
-  labels: props.rows.map((r) => r.name),
-  datasets: [
-    {
-      label: 'Hours logged',
-      data: props.rows.map((r) => r.hours),
-      backgroundColor: '#2f6fde',
-    },
-  ],
-}))
-
-const options = {
-  indexAxis: 'y' as const,
-  responsive: true,
-  plugins: { legend: { display: false } },
-  scales: { x: { beginAtZero: true } },
-}
+const max = computed(() => Math.max(1, ...props.rows.map((r) => r.hours)))
 </script>
 
 <template>
-  <Bar :data="chartData" :options="options" />
+  <div class="grid gap-3.5">
+    <div v-for="r in rows" :key="r.name">
+      <div class="mb-1.5 flex items-center justify-between gap-4 text-[13px] text-ink-soft">
+        <span class="min-w-0 truncate">{{ r.name }}</span>
+        <b class="shrink-0 font-mono text-xs font-medium text-ink">{{ r.hours }}h</b>
+      </div>
+      <div class="h-2 rounded-full bg-ink-tint">
+        <div class="h-full rounded-full bg-ink" :style="{ width: `${(r.hours / max) * 100}%` }" />
+      </div>
+    </div>
+  </div>
 </template>

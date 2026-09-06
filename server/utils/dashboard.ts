@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, isNotNull, lte } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNotNull, lte, ne } from 'drizzle-orm'
 import { reports, reportVersions, reviewComments, users, projects } from '../database/schema'
 import { addDaysIso, mondayOf } from '#shared/utils/week'
 
@@ -26,14 +26,19 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
     .from(reports)
     .innerJoin(users, eq(users.id, reports.userId))
     .leftJoin(projects, eq(projects.id, reports.projectId))
-    .where(and(gte(reports.weekStart, windowStart), lte(reports.weekStart, selectedWeekStart)))
+    .where(and(gte(reports.weekStart, windowStart), lte(reports.weekStart, selectedWeekStart), ne(reports.status, 'DRAFT')))
     .orderBy(asc(reports.weekStart))
 
   // Latest submitted version per report (drafts-in-progress are not team data yet)
   const reportIds = windowReports.map((r) => r.id)
   const versions = reportIds.length
     ? await database
-        .select()
+        .select({
+          reportId: reportVersions.reportId,
+          tasks: reportVersions.tasks,
+          blockers: reportVersions.blockers,
+          hoursByType: reportVersions.hoursByType,
+        })
         .from(reportVersions)
         .where(and(inArray(reportVersions.reportId, reportIds), isNotNull(reportVersions.submittedAt)))
         .orderBy(desc(reportVersions.versionNo))
@@ -47,7 +52,7 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
   const weekReports = windowReports.filter((r) => r.weekStart === selectedWeekStart)
   const statusCount = (status: string) => weekReports.filter((r) => r.status === status).length
   // Anyone who submitted on time is compliant — even if the report was sent back.
-  const submitted = weekReports.filter((r) => r.status !== 'DRAFT' && r.submittedAt)
+  const submitted = weekReports.filter((r) => r.submittedAt)
   const late = submitted.filter((r) => r.submittedAt! > new Date(`${weekEnd}T23:59:59Z`)).length
   const onTime = submitted.length - late
   const pending = memberIds.length - submitted.length
@@ -57,12 +62,24 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
     .filter((r) => r.status === 'SUBMITTED' || r.status === 'NEEDS_CORRECTION')
     .reduce((sum, r) => sum + (latestSubmitted.get(r.id)?.blockers.length ?? 0), 0)
 
+  // Most recent submitter of the week's still-unreviewed reports (for the stats band)
+  const firstInQueue = weekReports
+    .filter((r) => r.status === 'SUBMITTED' && r.submittedAt)
+    .sort((a, b) => +new Date(b.submittedAt!) - +new Date(a.submittedAt!))[0]?.userName ?? null
+
+  // Members whose week report is in Needs Correction (named in the hero line)
+  const correctionNames = weekReports
+    .filter((r) => r.status === 'NEEDS_CORRECTION')
+    .map((r) => r.userName)
+
   const summary = {
     weekStart: selectedWeekStart,
     totalSubmitted: statusCount('SUBMITTED'),
     approved: statusCount('APPROVED'),
     needsCorrection: statusCount('NEEDS_CORRECTION'),
     openBlockers,
+    firstInQueue,
+    correctionNames,
     compliance: { onTime: Math.max(0, onTime), late, pending, totalMembers: memberIds.length },
   }
 
@@ -78,7 +95,7 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
   })
 
   const statusByMember = members.map((m) => {
-    const counts = { DRAFT: 0, SUBMITTED: 0, NEEDS_CORRECTION: 0, APPROVED: 0 }
+    const counts = { SUBMITTED: 0, NEEDS_CORRECTION: 0, APPROVED: 0 }
     for (const report of windowReports.filter((r) => r.userId === m.id)) {
       counts[report.status]++
     }

@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const database = useDatabase()
 
   const [user] = await database
-    .select({ id: users.id, name: users.name, email: users.email, role: users.role })
+    .select({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status, createdAt: users.createdAt })
     .from(users)
     .where(eq(users.id, session.id))
 

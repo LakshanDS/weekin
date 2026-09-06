@@ -60,12 +60,17 @@ describe('report review cycle & RBAC', () => {
   let alice: Jar
   let bob: Jar
   let manager: Jar
+  let managerId: number
   let reportId: number
 
   it('logs in all three test accounts', async () => {
     alice = await login('alice@demo.io')
     bob = await login('bob@demo.io')
     manager = await login('manager@demo.io')
+    // Members can list managers for the assigned-manager picker
+    const managers = await call('GET', '/users/managers', alice)
+    expect(managers.status).toBe(200)
+    managerId = managers.json.managers[0].id
   })
 
   it('creates a draft and rejects a duplicate week', async () => {
@@ -77,8 +82,17 @@ describe('report review cycle & RBAC', () => {
     }
 
     const projects = await call('GET', '/projects', alice)
+    // An assigned manager is required at creation
+    const noManager = await call('POST', '/reports', alice, {
+      projectId: projects.json.projects[0].id,
+      ...week,
+      content,
+    })
+    expect(noManager.status).toBe(422)
+
     const { status, json } = await call('POST', '/reports', alice, {
       projectId: projects.json.projects[0].id,
+      assignedManagerId: managerId,
       ...week,
       content,
     })
@@ -88,6 +102,7 @@ describe('report review cycle & RBAC', () => {
 
     const dup = await call('POST', '/reports', alice, {
       projectId: projects.json.projects[0].id,
+      assignedManagerId: managerId,
       ...week,
       content,
     })
@@ -95,7 +110,7 @@ describe('report review cycle & RBAC', () => {
   })
 
   it('edits the draft in place (still one version), then submits', async () => {
-    const put = await call('PUT', `/reports/${reportId}`, alice, { projectId: null, content })
+    const put = await call('PUT', `/reports/${reportId}`, alice, { projectId: null, assignedManagerId: managerId, content })
     expect(put.status).toBe(200)
 
     const versions = await call('GET', `/reports/${reportId}/versions`, alice)
@@ -110,7 +125,7 @@ describe('report review cycle & RBAC', () => {
   it('hides other members reports and blocks member review actions', async () => {
     expect((await call('GET', `/reports/${reportId}`, bob)).status).toBe(404)
     expect((await call('POST', `/reports/${reportId}/approve`, alice, {})).status).toBe(403)
-    expect((await call('PUT', `/reports/${reportId}`, manager, { projectId: null, content })).status).toBe(403)
+    expect((await call('PUT', `/reports/${reportId}`, manager, { projectId: null, assignedManagerId: managerId, content })).status).toBe(403)
     // members cannot list someone else's reports even with a userId filter
     const list = await call('GET', '/reports?userId=999', bob)
     expect(list.json.reports.every((r: any) => r.userId !== 999)).toBe(true)
@@ -134,7 +149,7 @@ describe('report review cycle & RBAC', () => {
       ...content,
       tasks: [{ ...content.tasks[0], actualPct: 60, timeSpentH: 10 }],
     }
-    await call('PUT', `/reports/${reportId}`, alice, { projectId: null, content: edited })
+    await call('PUT', `/reports/${reportId}`, alice, { projectId: null, assignedManagerId: managerId, content: edited })
     const versions = await call('GET', `/reports/${reportId}/versions`, alice)
     expect(versions.json.versions).toHaveLength(2)
     expect(versions.json.versions[1].submittedAt).toBeNull()
@@ -149,7 +164,7 @@ describe('report review cycle & RBAC', () => {
   it('manager approves; report locks; comment history spans both versions', async () => {
     const res = await call('POST', `/reports/${reportId}/approve`, manager, { comment: 'Fixed, thanks.' })
     expect(res.json.status).toBe('APPROVED')
-    expect((await call('PUT', `/reports/${reportId}`, alice, { projectId: null, content })).status).toBe(409)
+    expect((await call('PUT', `/reports/${reportId}`, alice, { projectId: null, assignedManagerId: managerId, content })).status).toBe(409)
 
     const detail = await call('GET', `/reports/${reportId}`, alice)
     const actions = detail.json.comments.map((c: any) => [c.action, c.versionNo])

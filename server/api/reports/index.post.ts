@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm'
 import { reports, reportVersions, projects } from '../../database/schema'
 import { createReportSchema } from '#shared/schemas/report'
 import { addDaysIso, mondayOf } from '#shared/utils/week'
+import { validateAssignedManager } from '../../utils/reports'
 
 // POST /api/reports — create a draft with its first (unsubmitted) version.
 export default defineEventHandler(async (event) => {
@@ -18,6 +19,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 422, statusMessage: 'Unknown project' })
     }
   }
+  await validateAssignedManager(database, body.assignedManagerId)
 
   // Weeks are normalised server-side: always Monday..Friday, so team views
   // and the one-report-per-week rule can't be dodged with custom dates.
@@ -38,6 +40,7 @@ export default defineEventHandler(async (event) => {
       .values({
         userId: session.id,
         projectId: body.projectId,
+        assignedManagerId: body.assignedManagerId,
         weekStart,
         weekEnd,
         status: 'DRAFT',

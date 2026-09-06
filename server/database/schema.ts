@@ -10,9 +10,12 @@ import {
   date,
   timestamp,
   uniqueIndex,
+  index,
 } from 'drizzle-orm/pg-core'
 
 export const userRoleEnum = pgEnum('user_role', ['MEMBER', 'MANAGER'])
+// Self-registered accounts wait in PENDING until a manager approves them
+export const userStatusEnum = pgEnum('user_status', ['PENDING', 'ACTIVE'])
 export const reportStatusEnum = pgEnum('report_status', [
   'DRAFT',
   'SUBMITTED',
@@ -27,6 +30,7 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull().default('MEMBER'),
+  status: userStatusEnum('status').notNull().default('ACTIVE'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
@@ -37,20 +41,6 @@ export const projects = pgTable('projects', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
-export const projectMembers = pgTable(
-  'project_members',
-  {
-    id: serial('id').primaryKey(),
-    projectId: integer('project_id')
-      .notNull()
-      .references(() => projects.id, { onDelete: 'cascade' }),
-    userId: integer('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-  },
-  (t) => [uniqueIndex('project_members_project_user_uq').on(t.projectId, t.userId)],
-)
-
 export const reports = pgTable(
   'reports',
   {
@@ -59,7 +49,7 @@ export const reports = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     projectId: integer('project_id').references(() => projects.id, { onDelete: 'set null' }),
-    // ISO 'YYYY-MM-DD' strings, always a Monday..Friday week
+    assignedManagerId: integer('assigned_manager_id').references(() => users.id, {onDelete: 'set null'}),
     weekStart: date('week_start', { mode: 'string' }).notNull(),
     weekEnd: date('week_end', { mode: 'string' }).notNull(),
     status: reportStatusEnum('status').notNull().default('DRAFT'),
@@ -68,7 +58,10 @@ export const reports = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex('reports_user_week_uq').on(t.userId, t.weekStart)],
+  (t) => [
+    uniqueIndex('reports_user_week_uq').on(t.userId, t.weekStart),
+    index('reports_project_id_idx').on(t.projectId),
+  ],
 )
 
 // One row per content snapshot. Draft edits update the latest unsubmitted row
@@ -95,18 +88,22 @@ export const reportVersions = pgTable(
 )
 
 // Comments are tied to the exact version they were written against.
-export const reviewComments = pgTable('review_comments', {
-  id: serial('id').primaryKey(),
-  reportId: integer('report_id')
-    .notNull()
-    .references(() => reports.id, { onDelete: 'cascade' }),
-  versionId: integer('version_id')
-    .notNull()
-    .references(() => reportVersions.id, { onDelete: 'cascade' }),
-  managerId: integer('manager_id')
-    .notNull()
-    .references(() => users.id),
-  action: reviewActionEnum('action').notNull(),
-  comment: text('comment'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+export const reviewComments = pgTable(
+  'review_comments',
+  {
+    id: serial('id').primaryKey(),
+    reportId: integer('report_id')
+      .notNull()
+      .references(() => reports.id, { onDelete: 'cascade' }),
+    versionId: integer('version_id')
+      .notNull()
+      .references(() => reportVersions.id, { onDelete: 'cascade' }),
+    managerId: integer('manager_id')
+      .notNull()
+      .references(() => users.id),
+    action: reviewActionEnum('action').notNull(),
+    comment: text('comment'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('review_comments_report_id_idx').on(t.reportId)],
+)

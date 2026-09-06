@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, lte } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNotNull, lte, ne } from 'drizzle-orm'
 import { reports, reportVersions, users, projects } from '../../database/schema'
 
 // GET /api/team/week?week=YYYY-MM-DD — every member's report for one week,
@@ -22,11 +22,16 @@ export default defineEventHandler(async (event) => {
     })
     .from(reports)
     .leftJoin(projects, eq(projects.id, reports.projectId))
-    .where(and(eq(reports.weekStart, weekStart), inArray(reports.userId, members.map((m) => m.id))))
+    .where(and(eq(reports.weekStart, weekStart), inArray(reports.userId, members.map((m) => m.id)), ne(reports.status, 'DRAFT')))
 
   const versions = weekReports.length
     ? await database
-        .select()
+        .select({
+          reportId: reportVersions.reportId,
+          versionNo: reportVersions.versionNo,
+          blockers: reportVersions.blockers,
+          achievements: reportVersions.achievements,
+        })
         .from(reportVersions)
         .where(and(inArray(reportVersions.reportId, weekReports.map((r) => r.id)), isNotNull(reportVersions.submittedAt)))
     : []

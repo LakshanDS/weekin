@@ -52,41 +52,52 @@ function reset() {
 
 <template>
   <div v-if="user?.role === 'MANAGER'" class="fixed bottom-5 right-5 z-40 print:hidden">
-    <div v-if="open" class="mb-3 flex h-[520px] w-96 max-w-[calc(100vw-2.5rem)] flex-col border border-line bg-white shadow-2xl">
-      <div class="flex items-center justify-between border-b border-line px-4 py-3">
+    <div v-if="open" class="mb-3 flex h-[520px] w-96 max-w-[calc(100vw-2.5rem)] flex-col rounded-2xl border border-ink-subtle bg-white shadow-[0_12px_32px_rgba(36,36,36,0.18)]">
+      <div class="flex items-center justify-between border-b border-ink-subtle px-4 py-3">
         <div>
-          <p class="font-mono text-[11px] tracking-widest text-ink-500 uppercase">WeekLog assistant</p>
+          <p class="font-mono text-[11px] tracking-[0.15em] text-ink-muted uppercase">WeekIn AI</p>
           <p v-if="offline" class="mt-0.5 font-mono text-[10px] text-correction">offline mode · no API key</p>
         </div>
         <div class="flex gap-2">
-          <button class="cursor-pointer px-1.5 text-xs text-ink-500 hover:text-body" title="Clear conversation" @click="reset">×</button>
-          <button class="cursor-pointer px-1.5 text-xs text-ink-500 hover:text-body" @click="open = false">—</button>
+          <button class="cursor-pointer px-1.5 text-xs text-ink-soft hover:text-ink" title="Clear conversation" @click="reset">×</button>
+          <button class="cursor-pointer px-1.5 text-xs text-ink-soft hover:text-ink" @click="open = false">—</button>
         </div>
       </div>
 
       <div ref="thread" class="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        <p v-if="messages.length === 0" class="mt-8 text-center text-sm text-ink-500">
+        <p v-if="messages.length === 0" class="mt-8 text-center text-sm text-ink-muted">
           Ask about your team's reports —<br />"What did Alice work on last week?"
         </p>
-        <div v-for="(msg, i) in messages" :key="i" class="max-w-[85%] px-3 py-2 text-sm whitespace-pre-line"
-          :class="msg.role === 'user' ? 'ml-auto bg-ink-900 text-white' : 'border border-line bg-paper text-body'">
+        <div
+          v-for="(msg, i) in messages"
+          :key="i"
+          class="max-w-[85%] rounded-xl px-3 py-2 text-sm whitespace-pre-line"
+          :class="msg.role === 'user' ? 'ml-auto bg-ink text-white' : 'bg-ink-tint text-ink'"
+        >
           {{ msg.content }}
         </div>
-        <p v-if="busy" class="font-mono text-[11px] text-draft">thinking…</p>
+        <p v-if="busy" class="font-mono text-[11px] text-ink-muted">thinking…</p>
       </div>
 
-      <form class="flex gap-2 border-t border-line p-3" @submit.prevent="send">
-        <input v-model="draft" placeholder="Ask about the team…" class="flex-1 border border-line px-3 py-2 text-sm outline-none focus:border-approved" />
-        <button type="submit" :disabled="busy || !draft.trim()"
-          class="cursor-pointer bg-approved px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+      <form class="flex gap-2 border-t border-ink-subtle p-3" @submit.prevent="send">
+        <input
+          v-model="draft"
+          placeholder="Ask about the team…"
+          class="flex-1 rounded-md border border-ink-subtle px-3 py-2 text-sm outline-none transition-colors placeholder:text-ink-muted hover:border-[#d0d0d0] focus:border-ink"
+        >
+        <button
+          type="submit"
+          :disabled="busy || !draft.trim()"
+          class="cursor-pointer rounded-md bg-ink px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a] disabled:opacity-50"
+        >
           Send
         </button>
       </form>
     </div>
 
     <button
-      class="ml-auto flex size-13 cursor-pointer items-center justify-center bg-ink-900 font-display text-lg font-bold text-white shadow-xl transition-transform hover:scale-105"
-      title="WeekLog assistant"
+      class="ml-auto flex size-13 cursor-pointer items-center justify-center rounded-2xl bg-ink text-lg font-brand font-semibold text-white shadow-[0_12px_32px_rgba(36,36,36,0.18)] transition-transform hover:scale-105"
+      title="WeekIn AI"
       @click="open = !open"
     >
       AI

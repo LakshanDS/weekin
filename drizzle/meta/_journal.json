@@ -8,6 +8,27 @@
       "when": 1788540520908,
       "tag": "0000_rare_maddog",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788661798331,
+      "tag": "0001_amusing_red_ghost",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788687838899,
+      "tag": "0002_nappy_payback",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788695425614,
+      "tag": "0003_superb_marvel_apes",
+      "breakpoints": true
     }
   ]
 }

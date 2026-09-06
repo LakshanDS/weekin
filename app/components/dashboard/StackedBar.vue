@@ -11,22 +11,41 @@ import { Bar } from 'vue-chartjs'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-const props = defineProps<{ rows: { name: string; DRAFT: number; SUBMITTED: number; NEEDS_CORRECTION: number; APPROVED: number }[] }>()
+const props = defineProps<{ rows: { name: string; SUBMITTED: number; NEEDS_CORRECTION: number; APPROVED: number }[] }>()
 
 const chartData = computed(() => ({
   labels: props.rows.map((r) => r.name.split(' ')[0]),
   datasets: [
     { label: 'Approved', data: props.rows.map((r) => r.APPROVED), backgroundColor: '#1f8a5a' },
-    { label: 'Needs correction', data: props.rows.map((r) => r.NEEDS_CORRECTION), backgroundColor: '#d97e00' },
+    { label: 'Needs correction', data: props.rows.map((r) => r.NEEDS_CORRECTION), backgroundColor: '#ff5757' },
     { label: 'Submitted', data: props.rows.map((r) => r.SUBMITTED), backgroundColor: '#2f6fde' },
-    { label: 'Draft', data: props.rows.map((r) => r.DRAFT), backgroundColor: '#93a1ad' },
   ],
 }))
 
 const options = {
   responsive: true,
-  scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } },
-  plugins: { legend: { position: 'bottom' as const, labels: { boxWidth: 10, font: { size: 10 } } } },
+  scales: {
+    x: {
+      stacked: true,
+      grid: { display: false },
+      border: { color: '#E8E8E8' },
+      ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: '#8A8A8A' },
+    },
+    y: {
+      stacked: true,
+      beginAtZero: true,
+      grid: { color: '#ECECEC', borderDash: [3, 5] },
+      border: { display: false },
+      ticks: { precision: 0, font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: '#8A8A8A' },
+    },
+  },
+  plugins: {
+    legend: {
+      position: 'bottom' as const,
+      labels: { boxWidth: 8, boxHeight: 8, padding: 14, color: '#565656', font: { family: "'IBM Plex Mono', monospace", size: 9.5 } },
+    },
+  },
+  datasets: { bar: { borderRadius: 3, borderSkipped: false, barPercentage: 0.6, categoryPercentage: 0.72 } },
 }
 </script>
 

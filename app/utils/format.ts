@@ -9,3 +9,7 @@ export function formatDateTime(value: string | Date): string {
   const d = typeof value === 'string' ? new Date(value) : value
   return dtFull.format(d)
 }
+
+export function initials(name: string): string {
+  return name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+}

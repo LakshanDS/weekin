@@ -21,13 +21,13 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      titleTemplate: (title) => (title ? `${title} · WeekLog` : 'WeekLog'),
+      titleTemplate: (title) => (title ? `${title} · WeekIn` : 'WeekIn'),
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap',
         },
       ],
     },

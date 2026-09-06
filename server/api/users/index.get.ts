@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const database = useDatabase()
   return {
     users: await database
-      .select({ id: users.id, name: users.name, email: users.email, role: users.role, createdAt: users.createdAt })
+      .select({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status, createdAt: users.createdAt })
       .from(users)
       .orderBy(asc(users.id)),
   }

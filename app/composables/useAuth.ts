@@ -3,6 +3,7 @@ export interface AuthUser {
   name: string
   email: string
   role: 'MEMBER' | 'MANAGER'
+  status: 'PENDING' | 'ACTIVE'
 }
 
 export function useAuth() {
@@ -12,8 +13,9 @@ export function useAuth() {
 
   // Resolve the session once per app load; the httpOnly cookie travels
   // automatically (useRequestFetch forwards it during SSR).
-  async function fetchMe() {
-    if (initialized.value) return
+  // force=true re-fetches even if already resolved (approval polling).
+  async function fetchMe(force = false) {
+    if (initialized.value && !force) return
     initialized.value = true
     user.value = await requestFetch<{ user: AuthUser }>('/api/auth/me')
       .then((res) => res.user)

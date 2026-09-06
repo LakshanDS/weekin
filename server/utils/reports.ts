@@ -1,12 +1,17 @@
-import { and, desc, eq, isNull } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import type { H3Event } from 'h3'
 import { reports, reportVersions, users, projects } from '../database/schema'
 import type { ReportContent } from '#shared/types/report'
+
+const managerUsers = alias(users, 'manager_user')
 
 export interface ReportWithMeta {
   id: number
   userId: number
   projectId: number | null
+  assignedManagerId: number | null
+  assignedManagerName: string | null
   weekStart: string
   weekEnd: string
   status: 'DRAFT' | 'SUBMITTED' | 'NEEDS_CORRECTION' | 'APPROVED'
@@ -14,6 +19,17 @@ export interface ReportWithMeta {
   reviewedAt: Date | null
   userName: string
   projectName: string | null
+}
+
+// Create/edit must point the report at a real, active manager.
+export async function validateAssignedManager(database: ReturnType<typeof useDatabase>, managerId: number) {
+  const [manager] = await database
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.id, managerId), eq(users.role, 'MANAGER'), eq(users.status, 'ACTIVE')))
+  if (!manager) {
+    throw createError({ statusCode: 422, statusMessage: 'Assigned manager must be an active manager' })
+  }
 }
 
 // Load a report and enforce access: owners see their own, managers see all,
@@ -27,6 +43,8 @@ export async function loadReportFor(event: H3Event, id: number) {
       id: reports.id,
       userId: reports.userId,
       projectId: reports.projectId,
+      assignedManagerId: reports.assignedManagerId,
+      assignedManagerName: managerUsers.name,
       weekStart: reports.weekStart,
       weekEnd: reports.weekEnd,
       status: reports.status,
@@ -38,9 +56,14 @@ export async function loadReportFor(event: H3Event, id: number) {
     .from(reports)
     .innerJoin(users, eq(users.id, reports.userId))
     .leftJoin(projects, eq(projects.id, reports.projectId))
+    .leftJoin(managerUsers, eq(managerUsers.id, reports.assignedManagerId))
     .where(eq(reports.id, id))
 
   if (!row || (session.role !== 'MANAGER' && row.userId !== session.id)) {
+    throw createError({ statusCode: 404, statusMessage: 'Report not found' })
+  }
+  // Drafts are private to their owner; other managers get the same 404 (no existence leak).
+  if (row.status === 'DRAFT' && session.role === 'MANAGER' && row.userId !== session.id) {
     throw createError({ statusCode: 404, statusMessage: 'Report not found' })
   }
   return { session, database, report: row, isOwner: row.userId === session.id }
@@ -59,12 +82,13 @@ export async function getLatestVersion(database: ReturnType<typeof useDatabase>,
 // Managers review frozen content; the owner also sees their draft-in-progress edits.
 export async function getVisibleVersion(database: ReturnType<typeof useDatabase>, reportId: number, isOwner: boolean) {
   if (isOwner) return getLatestVersion(database, reportId)
-  const rows = await database
+  const [version] = await database
     .select()
     .from(reportVersions)
-    .where(and(eq(reportVersions.reportId, reportId)))
+    .where(and(eq(reportVersions.reportId, reportId), isNotNull(reportVersions.submittedAt)))
     .orderBy(desc(reportVersions.versionNo))
-  return rows.find((v) => v.submittedAt !== null) ?? null
+    .limit(1)
+  return version ?? null
 }
 
 // Draft edits update the unsubmitted version in place; once frozen, edits
@@ -73,6 +97,7 @@ export async function saveContent(
   database: ReturnType<typeof useDatabase>,
   reportId: number,
   projectId: number | null,
+  assignedManagerId: number,
   content: ReportContent,
 ) {
   const latest = await getLatestVersion(database, reportId)
@@ -86,7 +111,7 @@ export async function saveContent(
       .where(and(eq(reportVersions.id, latest.id), isNull(reportVersions.submittedAt)))
       .returning({ id: reportVersions.id })
     if (updated.length) {
-      await database.update(reports).set({ projectId, updatedAt: new Date() }).where(eq(reports.id, reportId))
+      await database.update(reports).set({ projectId, assignedManagerId, updatedAt: new Date() }).where(eq(reports.id, reportId))
       return updated[0].id
     }
   }
@@ -95,6 +120,6 @@ export async function saveContent(
     .insert(reportVersions)
     .values({ reportId, versionNo: (latest?.versionNo ?? 0) + 1, ...content })
     .returning({ id: reportVersions.id })
-  await database.update(reports).set({ projectId, updatedAt: new Date() }).where(eq(reports.id, reportId))
+  await database.update(reports).set({ projectId, assignedManagerId, updatedAt: new Date() }).where(eq(reports.id, reportId))
   return created.id
 }

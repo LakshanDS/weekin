@@ -31,7 +31,13 @@ export async function buildTeamContext(windowWeeks = 6): Promise<string> {
 
   const versions = rows.length
     ? await database
-        .select()
+        .select({
+          reportId: reportVersions.reportId,
+          tasks: reportVersions.tasks,
+          blockers: reportVersions.blockers,
+          achievements: reportVersions.achievements,
+          hoursByType: reportVersions.hoursByType,
+        })
         .from(reportVersions)
         .where(and(inArray(reportVersions.reportId, rows.map((r) => r.id)), isNotNull(reportVersions.submittedAt)))
         .orderBy(desc(reportVersions.versionNo))

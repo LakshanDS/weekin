@@ -33,7 +33,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         role="alertdialog"
         aria-modal="true"
         :aria-label="state.options.title"
-        class="w-full max-w-md border border-line bg-white p-6 shadow-2xl"
+        class="w-full max-w-md rounded-[6px] border border-line bg-white p-6 shadow-2xl"
       >
         <p
           class="font-mono text-[11px] tracking-widest uppercase"
@@ -45,13 +45,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         <div class="mt-6 flex justify-end gap-3">
           <button
             id="confirm-cancel"
-            class="cursor-pointer border border-line px-4 py-2 text-sm font-medium hover:border-ink-500"
+            class="cursor-pointer rounded-[10px] border border-line px-4 py-2 text-sm font-medium hover:border-ink-500"
             @click="answer(false)"
           >
             Cancel
           </button>
           <button
-            class="cursor-pointer px-4 py-2 text-sm font-semibold text-white"
+            class="cursor-pointer rounded-[10px] px-4 py-2 text-sm font-semibold text-white"
             :class="state.options.tone === 'danger' ? 'bg-correction hover:bg-correction/90' : 'bg-approved hover:bg-approved/90'"
             @click="answer(true)"
           >

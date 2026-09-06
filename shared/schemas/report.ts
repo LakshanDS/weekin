@@ -38,6 +38,7 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use format YYYY-MM-DD')
 
 export const createReportSchema = z.object({
   projectId: z.number().int().positive().nullable(),
+  assignedManagerId: z.number().int().positive(),
   weekStart: isoDate,
   weekEnd: isoDate,
   content: reportContentSchema,
@@ -48,6 +49,7 @@ export const createReportSchema = z.object({
 
 export const updateReportContentSchema = z.object({
   projectId: z.number().int().positive().nullable(),
+  assignedManagerId: z.number().int().positive(),
   content: reportContentSchema,
 })
 
@@ -67,6 +69,8 @@ export const reportListQuerySchema = z.object({
   userId: z.coerce.number().int().positive().optional(),
   from: isoDate.optional(),
   to: isoDate.optional(),
+  // Free-text search: member name, project name, week or submitted date fragments.
+  q: z.string().trim().min(1).max(80).optional(),
 })
 
 export type CreateReportInput = z.output<typeof createReportSchema>

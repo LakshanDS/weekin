@@ -1,15 +1,13 @@
-// Seed: 1 manager, 5 members, 4 projects, 6 weeks of reports in mixed statuses.
+// Seed: 2 managers, 5 members, 4 projects, 6 weeks of reports in mixed statuses.
 // Deterministic content (no Math.random) so re-seeding gives the same demo data.
 // Run: bun server/database/seed.ts   (bun auto-loads .env)
 
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import bcrypt from 'bcryptjs'
-import { eq } from 'drizzle-orm'
 import {
   users,
   projects,
-  projectMembers,
   reports,
   reportVersions,
   reviewComments,
@@ -23,7 +21,7 @@ import type {
 } from '../../shared/types/report'
 
 const database = drizzle(postgres(process.env.NUXT_DATABASE_URL!, { max: 1 }), {
-  schema: { users, projects, projectMembers, reports, reportVersions, reviewComments },
+  schema: { users, projects, reports, reportVersions, reviewComments },
 })
 
 const DEMO_PASSWORD = 'password123'
@@ -191,16 +189,19 @@ async function main() {
   await database.delete(reviewComments)
   await database.delete(reportVersions)
   await database.delete(reports)
-  await database.delete(projectMembers)
   await database.delete(projects)
   await database.delete(users)
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10)
 
-  const [manager] = await database
+  const managerRows = await database
     .insert(users)
-    .values({ name: 'Ruwan Jayasuriya', email: 'manager@demo.io', passwordHash, role: 'MANAGER' })
+    .values([
+      { name: 'Ruwan Jayasuriya', email: 'manager@demo.io', passwordHash, role: 'MANAGER' as const },
+      { name: 'Nadia Fernando', email: 'manager2@demo.io', passwordHash, role: 'MANAGER' as const },
+    ])
     .returning()
+  const [manager, manager2] = managerRows
 
   const members = await database
     .insert(users)
@@ -225,17 +226,7 @@ async function main() {
       { name: 'Marketing Site', description: 'Public website and landing pages' },
     ])
     .returning()
-
-  await database.insert(projectMembers).values([
-    { projectId: projectRows[0].id, userId: members[0].id },
-    { projectId: projectRows[1].id, userId: members[0].id },
-    { projectId: projectRows[0].id, userId: members[1].id },
-    { projectId: projectRows[3].id, userId: members[2].id },
-    { projectId: projectRows[2].id, userId: members[2].id },
-    { projectId: projectRows[1].id, userId: members[3].id },
-    { projectId: projectRows[2].id, userId: members[4].id },
-    { projectId: projectRows[1].id, userId: members[4].id },
-  ])
+  const projectIds = projectRows.map((p) => p.id)
 
   let reportCount = 0
   let versionCount = 0
@@ -243,18 +234,15 @@ async function main() {
 
   for (const member of members) {
     const mi = memberIdx.get(member.email)!
-    const memberProjects = await database
-      .select({ projectId: projectMembers.projectId })
-      .from(projectMembers)
-      .where(eq(projectMembers.userId, member.id))
-    const assignedIds = memberProjects.map((p) => p.projectId)
 
     for (let wi = 0; wi < WEEKS.length; wi++) {
       const kind = PLAN[member.email]![wi]
       if (!kind) continue
 
       const week = WEEKS[wi]
-      const projectId = assignedIds.length ? pick(assignedIds, mi + wi) : null
+      const projectId = pick(projectIds, mi + wi)
+      // Alternate the assigned manager per member so both review queues look real.
+      const assignedManager = mi % 2 === 0 ? manager : manager2
       const isLate = LATE_WEEKS.has(`${member.email}:${wi}`)
       const submittedAt = new Date(
         `${isLate ? addDays(week.weekEnd, 1) : week.weekEnd}T17:${isLate ? '4' : '0'}0:00Z`,
@@ -266,6 +254,7 @@ async function main() {
         .values({
           userId: member.id,
           projectId,
+          assignedManagerId: assignedManager.id,
           weekStart: week.weekStart,
           weekEnd: week.weekEnd,
           status: kind === 'D' ? 'DRAFT' : kind === 'S' ? 'SUBMITTED' : kind === 'NC' ? 'NEEDS_CORRECTION' : 'APPROVED',
@@ -302,7 +291,7 @@ async function main() {
         await database.insert(reviewComments).values({
           reportId: report.id,
           versionId: v1.id,
-          managerId: manager.id,
+          managerId: assignedManager.id,
           action: 'REQUEST_CHANGES',
           comment: pick(REQUEST_CHANGES_COMMENTS, mi * 5 + wi),
           createdAt: submittedAt,
@@ -318,7 +307,7 @@ async function main() {
           await database.insert(reviewComments).values({
             reportId: report.id,
             versionId: v2.id,
-            managerId: manager.id,
+            managerId: assignedManager.id,
             action: 'APPROVE',
             comment: approveComment,
             createdAt: new Date(`${addDays(week.weekEnd, 2)}T15:00:00Z`),
@@ -333,7 +322,7 @@ async function main() {
           await database.insert(reviewComments).values({
             reportId: report.id,
             versionId: v1.id,
-            managerId: manager.id,
+            managerId: assignedManager.id,
             action: 'APPROVE',
             comment: approveComment,
             createdAt: submittedAt,
@@ -345,9 +334,9 @@ async function main() {
   }
 
   console.log(
-    `Done. users=${members.length + 1} projects=${projectRows.length} reports=${reportCount} versions=${versionCount} comments=${commentCount}`,
+    `Done. users=${members.length + 2} projects=${projectRows.length} reports=${reportCount} versions=${versionCount} comments=${commentCount}`,
   )
-  console.log(`Manager login:  manager@demo.io / ${DEMO_PASSWORD}`)
+  console.log(`Manager logins: manager@demo.io, manager2@demo.io / ${DEMO_PASSWORD}`)
   console.log(`Member login:   alice@demo.io / ${DEMO_PASSWORD} (all members use the same password)`)
 }
 
