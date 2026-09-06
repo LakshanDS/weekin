@@ -4,8 +4,8 @@ import { projects } from '../../../database/schema'
 // DELETE /api/projects/:id — reports keep their history, project reference is cleared (manager only)
 export default defineEventHandler(async (event) => {
   await requireManager(event)
-  const id = Number(getRouterParam(event, 'id'))
-  const database = useDatabase()
+  const id = parseIdParam(event)
+  const database = useDatabase(event)
 
   const [existing] = await database.select({ id: projects.id }).from(projects).where(eq(projects.id, id))
   if (!existing) {

@@ -8,7 +8,7 @@ import { validateAssignedManager } from '../../utils/reports'
 export default defineEventHandler(async (event) => {
   const session = requireUser(event)
   const body = await validateBody(event, createReportSchema)
-  const database = useDatabase()
+  const database = useDatabase(event)
 
   if (body.projectId) {
     const [project] = await database
@@ -34,25 +34,32 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: 'You already have a report for this week' })
   }
 
-  const report = await database.transaction(async (tx) => {
-    const [created] = await tx
-      .insert(reports)
-      .values({
-        userId: session.id,
-        projectId: body.projectId,
-        assignedManagerId: body.assignedManagerId,
-        weekStart,
-        weekEnd,
-        status: 'DRAFT',
+  let report
+  try {
+    report = await database.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(reports)
+        .values({
+          userId: session.id,
+          projectId: body.projectId,
+          assignedManagerId: body.assignedManagerId,
+          weekStart,
+          weekEnd,
+          status: 'DRAFT',
+        })
+        .returning()
+      await tx.insert(reportVersions).values({
+        reportId: created.id,
+        versionNo: 1,
+        ...body.content,
       })
-      .returning()
-    await tx.insert(reportVersions).values({
-      reportId: created.id,
-      versionNo: 1,
-      ...body.content,
+      return created
     })
-    return created
-  })
+  } catch (error) {
+    // 23505: a concurrent create raced past the pre-check to the unique index.
+    if ((error as { code?: string }).code !== '23505') throw error
+    throw createError({ statusCode: 409, statusMessage: 'You already have a report for this week' })
+  }
 
   setResponseStatus(event, 201)
   return { report }

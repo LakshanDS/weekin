@@ -30,7 +30,10 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull().default('MEMBER'),
-  status: userStatusEnum('status').notNull().default('ACTIVE'),
+  // Default PENDING so an insert path that forgets status can't create an active account.
+  status: userStatusEnum('status').notNull().default('PENDING'),
+  // Bumped to revoke all existing sessions (checked at sign-in / per request).
+  tokenVersion: integer('token_version').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
@@ -61,6 +64,9 @@ export const reports = pgTable(
   (t) => [
     uniqueIndex('reports_user_week_uq').on(t.userId, t.weekStart),
     index('reports_project_id_idx').on(t.projectId),
+    // Matches the list/dashboard/AI sort and window scans.
+    index('reports_week_start_idx').on(t.weekStart.desc(), t.id.desc()),
+    index('reports_assigned_manager_id_idx').on(t.assignedManagerId),
   ],
 )
 
@@ -105,5 +111,10 @@ export const reviewComments = pgTable(
     comment: text('comment'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('review_comments_report_id_idx').on(t.reportId)],
+  (t) => [
+    index('review_comments_report_id_idx').on(t.reportId),
+    index('review_comments_version_id_idx').on(t.versionId),
+    // Activity feed sorts by creation time.
+    index('review_comments_created_at_idx').on(t.createdAt),
+  ],
 )

@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const weekParam = typeof query.week === 'string' ? query.week : undefined
   const weekStart = weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam) ? mondayOf(weekParam) : mondayOf(new Date().toISOString().slice(0, 10))
-  const database = useDatabase()
+  const database = useDatabase(event)
 
   const members = await database.select({ id: users.id, name: users.name }).from(users).where(eq(users.role, 'MEMBER')).orderBy(users.name)
 
@@ -39,11 +39,12 @@ export default defineEventHandler(async (event) => {
   for (const version of versions.sort((a, b) => b.versionNo - a.versionNo)) {
     if (!latest.has(version.reportId)) latest.set(version.reportId, version)
   }
+  const reportByUser = new Map(weekReports.map((r) => [r.userId, r]))
 
   return {
     weekStart,
     members: members.map((m) => {
-      const report = weekReports.find((r) => r.userId === m.id)
+      const report = reportByUser.get(m.id)
       const content = report ? latest.get(report.id) : undefined
       return {
         userId: m.id,

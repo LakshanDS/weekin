@@ -4,7 +4,7 @@ import { projects, reports } from '../../database/schema'
 // GET /api/projects — list all with how many reports use each one
 export default defineEventHandler(async (event) => {
   requireUser(event)
-  const database = useDatabase()
+  const database = useDatabase(event)
   const rows = await database
     .select({
       id: projects.id,

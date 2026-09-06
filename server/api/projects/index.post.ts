@@ -11,17 +11,25 @@ const projectSchema = z.object({
 export default defineEventHandler(async (event) => {
   await requireManager(event)
   const body = await validateBody(event, projectSchema)
-  const database = useDatabase()
+  const database = useDatabase(event)
 
   const [existing] = await database.select({ id: projects.id }).from(projects).where(eq(projects.name, body.name))
   if (existing) {
     throw createError({ statusCode: 409, statusMessage: 'A project with this name already exists' })
   }
 
-  const [project] = await database
-    .insert(projects)
-    .values({ name: body.name, description: body.description ?? null })
-    .returning()
+  let project
+  try {
+    const [created] = await database
+      .insert(projects)
+      .values({ name: body.name, description: body.description ?? null })
+      .returning()
+    project = created
+  } catch (error) {
+    // 23505: a concurrent create raced past the pre-check to the unique index.
+    if ((error as { code?: string }).code !== '23505') throw error
+    throw createError({ statusCode: 409, statusMessage: 'A project with this name already exists' })
+  }
   setResponseStatus(event, 201)
   return { project }
 })

@@ -4,8 +4,8 @@ import { users } from '../../../database/schema'
 // DELETE /api/users/:id — remove a team member and their reports (manager only)
 export default defineEventHandler(async (event) => {
   const session = await requireManager(event)
-  const id = Number(getRouterParam(event, 'id'))
-  const database = useDatabase()
+  const id = parseIdParam(event)
+  const database = useDatabase(event)
 
   if (session.id === id) {
     throw createError({ statusCode: 409, statusMessage: 'You cannot remove your own account' })

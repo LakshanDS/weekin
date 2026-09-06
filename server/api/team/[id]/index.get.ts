@@ -1,11 +1,11 @@
-import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import { projects, reports, reportVersions, users } from '../../../database/schema'
 
 // GET /api/team/:id — one member's profile: basic stats + report history (manager only)
 export default defineEventHandler(async (event) => {
   await requireManager(event)
-  const id = Number(getRouterParam(event, 'id'))
-  const database = useDatabase()
+  const id = parseIdParam(event)
+  const database = useDatabase(event)
 
   const [member] = await database
     .select({ id: users.id, name: users.name, email: users.email, role: users.role, createdAt: users.createdAt })
@@ -29,18 +29,20 @@ export default defineEventHandler(async (event) => {
     .where(eq(reports.userId, id))
     .orderBy(desc(reports.weekStart))
 
-  // Aggregate content stats over each report's latest submitted version
+  // Content stats over each report's latest submitted version, fetched in SQL —
+  // only the columns we aggregate cross the wire, not every version's JSONB.
   const versions = history.length
     ? await database
-        .select()
+        .selectDistinctOn([reportVersions.reportId], {
+          reportId: reportVersions.reportId,
+          tasks: reportVersions.tasks,
+          hoursByType: reportVersions.hoursByType,
+        })
         .from(reportVersions)
         .where(and(inArray(reportVersions.reportId, history.map((r) => r.id)), isNotNull(reportVersions.submittedAt)))
-        .orderBy(desc(reportVersions.versionNo))
+        .orderBy(asc(reportVersions.reportId), desc(reportVersions.versionNo))
     : []
-  const latestSubmitted = new Map<number, (typeof versions)[number]>()
-  for (const version of versions) {
-    if (!latestSubmitted.has(version.reportId)) latestSubmitted.set(version.reportId, version)
-  }
+  const latestSubmitted = new Map(versions.map((v) => [v.reportId, v]))
 
   const stats = {
     totalReports: history.length,

@@ -1,13 +1,12 @@
 import { and, eq } from 'drizzle-orm'
 import { reports, reviewComments } from '../../../database/schema'
 import { requestChangesSchema } from '#shared/schemas/report'
-import { loadReportFor, getVisibleVersion } from '../../../utils/reports'
+import { loadReportFor, getVisibleVersionId } from '../../../utils/reports'
 
 // POST /api/reports/:id/request-changes — manager sends the report back
 // with a required comment tied to the version under review.
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  const { session, database, report } = await loadReportFor(event, Number(id))
+  const { session, database, report } = await loadReportFor(event, parseIdParam(event))
 
   await requireManager(event)
   if (session.id === report.userId) {
@@ -18,7 +17,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await validateBody(event, requestChangesSchema)
-  const version = await getVisibleVersion(database, report.id, false)
+  const versionId = await getVisibleVersionId(database, report.id)
+  if (!versionId) {
+    throw createError({ statusCode: 409, statusMessage: 'Nothing to review' })
+  }
   const now = new Date()
 
   await database.transaction(async (tx) => {
@@ -33,7 +35,7 @@ export default defineEventHandler(async (event) => {
     }
     await tx.insert(reviewComments).values({
       reportId: report.id,
-      versionId: version!.id,
+      versionId,
       managerId: session.id,
       action: 'REQUEST_CHANGES',
       comment: body.comment,
