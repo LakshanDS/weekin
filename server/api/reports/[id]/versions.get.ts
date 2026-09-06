@@ -8,14 +8,10 @@ export default defineEventHandler(async (event) => {
   const id = parseIdParam(event)
   const { database, isOwner } = await loadReportFor(event, id)
 
-  // Visibility rule in SQL; metadata columns only — JSONB content stays out.
+  // Visibility rule in SQL. Full rows: the report page renders each version's
+  // content in its timeline, so the JSONB columns are part of the contract.
   const versions = await database
-    .select({
-      id: reportVersions.id,
-      versionNo: reportVersions.versionNo,
-      submittedAt: reportVersions.submittedAt,
-      createdAt: reportVersions.createdAt,
-    })
+    .select()
     .from(reportVersions)
     .where(isOwner ? eq(reportVersions.reportId, id) : and(eq(reportVersions.reportId, id), isNotNull(reportVersions.submittedAt)))
     .orderBy(asc(reportVersions.versionNo))
