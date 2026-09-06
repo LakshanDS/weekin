@@ -197,8 +197,9 @@ async function main() {
   const managerRows = await database
     .insert(users)
     .values([
-      { name: 'Ruwan Jayasuriya', email: 'manager@demo.io', passwordHash, role: 'MANAGER' as const },
-      { name: 'Nadia Fernando', email: 'manager2@demo.io', passwordHash, role: 'MANAGER' as const },
+      // Explicit ACTIVE: the column default is PENDING (only self-signup should be pending).
+      { name: 'Ruwan Jayasuriya', email: 'manager@demo.io', passwordHash, role: 'MANAGER' as const, status: 'ACTIVE' as const },
+      { name: 'Nadia Fernando', email: 'manager2@demo.io', passwordHash, role: 'MANAGER' as const, status: 'ACTIVE' as const },
     ])
     .returning()
   const [manager, manager2] = managerRows
@@ -212,7 +213,7 @@ async function main() {
         { name: 'Chatura Silva', email: 'chatura@demo.io' },
         { name: 'Dilini Jayawardena', email: 'dilini@demo.io' },
         { name: 'Ethan Kumara', email: 'ethan@demo.io' },
-      ].map((u) => ({ ...u, passwordHash, role: 'MEMBER' as const })),
+      ].map((u) => ({ ...u, passwordHash, role: 'MEMBER' as const, status: 'ACTIVE' as const })),
     )
     .returning()
   const memberIdx = new Map(members.map((m, i) => [m.email, i]))
