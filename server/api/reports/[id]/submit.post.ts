@@ -6,7 +6,13 @@ import { loadReportFor, getLatestVersion } from '../../../utils/reports'
 // Freezes the current content as the version under review.
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
-  const { database, report } = await loadReportFor(event, Number(id))
+  const { session, database, report } = await loadReportFor(event, Number(id))
+
+  // Only the owner submits: a manager force-submitting would freeze the report
+  // and lock the member out. Same 404 as cross-user reads (no existence leak).
+  if (report.userId !== session.id) {
+    throw createError({ statusCode: 404, statusMessage: 'Report not found' })
+  }
 
   if (report.status !== 'DRAFT' && report.status !== 'NEEDS_CORRECTION') {
     throw createError({ statusCode: 409, statusMessage: 'Only a draft or corrected report can be submitted' })

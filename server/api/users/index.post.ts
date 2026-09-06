@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
 
   const [user] = await database
     .insert(users)
-    .values({ name: body.name, email, passwordHash: await hashPassword(body.password), role: body.role })
+    // Explicit: the column default may flip to PENDING; invites stay immediately active.
+    .values({ name: body.name, email, passwordHash: await hashPassword(body.password), role: body.role, status: 'ACTIVE' })
     .returning({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status })
   setResponseStatus(event, 201)
   return { user }

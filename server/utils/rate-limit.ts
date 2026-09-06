@@ -30,5 +30,7 @@ export function rateLimit(key: string, max: number, windowMs: number) {
 }
 
 export function clientIp(event: Parameters<typeof getRequestIP>[0]): string {
-  return getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
+  // cf-connecting-ip is set by Cloudflare from the real client; X-Forwarded-For's
+  // leftmost entry is client-controlled and spoofable. Socket IP is right in dev/Node.
+  return getRequestHeader(event, 'cf-connecting-ip') || getRequestIP(event) || 'unknown'
 }

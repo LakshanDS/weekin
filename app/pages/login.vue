@@ -36,7 +36,10 @@ async function submit() {
   submitting.value = true
   try {
     await login(parsed.data.email, parsed.data.password)
-    const target = user.value?.status === 'PENDING' ? '/pending' : (route.query.redirect as string) || '/'
+    // Only same-origin relative paths; anything else (or '//host') falls back to '/'.
+    const redirect = route.query.redirect
+    const safeRedirect = typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
+    const target = user.value?.status === 'PENDING' ? '/pending' : safeRedirect
     await navigateTo(target, { replace: true })
   } catch (err) {
     applyApiError(err)
