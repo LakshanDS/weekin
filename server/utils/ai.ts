@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNotNull } from 'drizzle-orm'
 import { projects, reports, reportVersions, users } from '../database/schema'
 import { addDaysIso, mondayOf } from '#shared/utils/week'
 
@@ -8,8 +8,7 @@ export interface ChatMessage {
 }
 
 // Compact, grounded snapshot of the team's last few weeks of reports.
-export async function buildTeamContext(windowWeeks = 6): Promise<string> {
-  const database = useDatabase()
+export async function buildTeamContext(windowWeeks = 6, database: ReturnType<typeof useDatabase> = useDatabase()) {
   const windowStart = addDaysIso(mondayOf(new Date().toISOString().slice(0, 10)), -7 * (windowWeeks - 1))
 
   const members = await database.select({ id: users.id, name: users.name }).from(users).where(eq(users.role, 'MEMBER'))
@@ -29,9 +28,11 @@ export async function buildTeamContext(windowWeeks = 6): Promise<string> {
     .where(and(gte(reports.weekStart, windowStart), inArray(reports.userId, members.map((m) => m.id))))
     .orderBy(desc(reports.weekStart))
 
+  // Latest submitted version per report in SQL — only the JSONB we read
+  // crosses the wire, not every historical version.
   const versions = rows.length
     ? await database
-        .select({
+        .selectDistinctOn([reportVersions.reportId], {
           reportId: reportVersions.reportId,
           tasks: reportVersions.tasks,
           blockers: reportVersions.blockers,
@@ -40,12 +41,9 @@ export async function buildTeamContext(windowWeeks = 6): Promise<string> {
         })
         .from(reportVersions)
         .where(and(inArray(reportVersions.reportId, rows.map((r) => r.id)), isNotNull(reportVersions.submittedAt)))
-        .orderBy(desc(reportVersions.versionNo))
+        .orderBy(asc(reportVersions.reportId), desc(reportVersions.versionNo))
     : []
-  const latest = new Map<number, (typeof versions)[number]>()
-  for (const version of versions) {
-    if (!latest.has(version.reportId)) latest.set(version.reportId, version)
-  }
+  const latest = new Map(versions.map((v) => [v.reportId, v]))
 
   const lines: string[] = [`Reporting window: weeks starting ${windowStart} to today. Weekly reports (submitted versions only):`]
   for (const report of rows) {

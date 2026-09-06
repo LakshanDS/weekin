@@ -1,11 +1,16 @@
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, ne } from 'drizzle-orm'
+import type { H3Event } from 'h3'
 import { reports, reportVersions, reviewComments, users, projects } from '../database/schema'
 import { addDaysIso, mondayOf } from '#shared/utils/week'
 
+// Same rows with submittedAt narrowed to Date — saves the non-null assertions.
+const withSubmittedAt = <T extends { submittedAt: Date | null }>(rows: T[]) =>
+  rows.filter((r): r is T & { submittedAt: Date } => r.submittedAt !== null)
+
 // Aggregations for the manager dashboard. Data volume is small (internal team),
 // so we pull the window's rows once and aggregate in JS — easy to read, easy to test.
-export async function getDashboardData(selectedWeekStart: string, windowWeeks = 8) {
-  const database = useDatabase()
+export async function getDashboardData(selectedWeekStart: string, event: H3Event, windowWeeks = 8) {
+  const database = useDatabase(event)
   const weekEnd = addDaysIso(selectedWeekStart, 4)
   const windowStart = addDaysIso(mondayOf(selectedWeekStart), -7 * (windowWeeks - 1))
 
@@ -29,11 +34,12 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
     .where(and(gte(reports.weekStart, windowStart), lte(reports.weekStart, selectedWeekStart), ne(reports.status, 'DRAFT')))
     .orderBy(asc(reports.weekStart))
 
-  // Latest submitted version per report (drafts-in-progress are not team data yet)
+  // Latest submitted version per report in SQL — only the JSONB we read
+  // crosses the wire, not every historical version.
   const reportIds = windowReports.map((r) => r.id)
   const versions = reportIds.length
     ? await database
-        .select({
+        .selectDistinctOn([reportVersions.reportId], {
           reportId: reportVersions.reportId,
           tasks: reportVersions.tasks,
           blockers: reportVersions.blockers,
@@ -41,19 +47,16 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
         })
         .from(reportVersions)
         .where(and(inArray(reportVersions.reportId, reportIds), isNotNull(reportVersions.submittedAt)))
-        .orderBy(desc(reportVersions.versionNo))
+        .orderBy(asc(reportVersions.reportId), desc(reportVersions.versionNo))
     : []
-  const latestSubmitted = new Map<number, (typeof versions)[number]>()
-  for (const version of versions) {
-    if (!latestSubmitted.has(version.reportId)) latestSubmitted.set(version.reportId, version)
-  }
+  const latestSubmitted = new Map(versions.map((v) => [v.reportId, v]))
 
   // --- week summary ---
   const weekReports = windowReports.filter((r) => r.weekStart === selectedWeekStart)
   const statusCount = (status: string) => weekReports.filter((r) => r.status === status).length
   // Anyone who submitted on time is compliant — even if the report was sent back.
-  const submitted = weekReports.filter((r) => r.submittedAt)
-  const late = submitted.filter((r) => r.submittedAt! > new Date(`${weekEnd}T23:59:59Z`)).length
+  const submitted = withSubmittedAt(weekReports)
+  const late = submitted.filter((r) => r.submittedAt > new Date(`${weekEnd}T23:59:59Z`)).length
   const onTime = submitted.length - late
   const pending = memberIds.length - submitted.length
 
@@ -63,9 +66,9 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
     .reduce((sum, r) => sum + (latestSubmitted.get(r.id)?.blockers.length ?? 0), 0)
 
   // Most recent submitter of the week's still-unreviewed reports (for the stats band)
-  const firstInQueue = weekReports
-    .filter((r) => r.status === 'SUBMITTED' && r.submittedAt)
-    .sort((a, b) => +new Date(b.submittedAt!) - +new Date(a.submittedAt!))[0]?.userName ?? null
+  const firstInQueue = submitted
+    .filter((r) => r.status === 'SUBMITTED')
+    .sort((a, b) => +b.submittedAt - +a.submittedAt)[0]?.userName ?? null
 
   // Members whose week report is in Needs Correction (named in the hero line)
   const correctionNames = weekReports
@@ -115,9 +118,8 @@ export async function getDashboardData(selectedWeekStart: string, windowWeeks = 
   }
 
   // --- activity feed: submissions + review actions, newest first ---
-  const submissions = windowReports
-    .filter((r) => r.submittedAt)
-    .map((r) => ({ type: 'submitted' as const, at: r.submittedAt!, text: `${r.userName} submitted ${r.weekStart}`, reportId: r.id }))
+  const submissions = withSubmittedAt(windowReports)
+    .map((r) => ({ type: 'submitted' as const, at: r.submittedAt, text: `${r.userName} submitted ${r.weekStart}`, reportId: r.id }))
   const reviews = await database
     .select({
       action: reviewComments.action,

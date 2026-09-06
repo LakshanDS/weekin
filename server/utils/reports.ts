@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import type { H3Event } from 'h3'
 import { reports, reportVersions, users, projects } from '../database/schema'
@@ -36,7 +36,7 @@ export async function validateAssignedManager(database: ReturnType<typeof useDat
 // anyone else gets a 404 (no existence leak).
 export async function loadReportFor(event: H3Event, id: number) {
   const session = requireUser(event)
-  const database = useDatabase()
+  const database = useDatabase(event)
 
   const [row] = await database
     .select({
@@ -91,6 +91,17 @@ export async function getVisibleVersion(database: ReturnType<typeof useDatabase>
   return version ?? null
 }
 
+// Same visibility rule, but only the version id (enough for review actions).
+export async function getVisibleVersionId(database: ReturnType<typeof useDatabase>, reportId: number) {
+  const [version] = await database
+    .select({ id: reportVersions.id })
+    .from(reportVersions)
+    .where(and(eq(reportVersions.reportId, reportId), isNotNull(reportVersions.submittedAt)))
+    .orderBy(desc(reportVersions.versionNo))
+    .limit(1)
+  return version?.id ?? null
+}
+
 // Draft edits update the unsubmitted version in place; once frozen, edits
 // open a new version. Returns the id of the version holding current content.
 export async function saveContent(
@@ -100,6 +111,18 @@ export async function saveContent(
   assignedManagerId: number,
   content: ReportContent,
 ) {
+  // Status-guarded rewrite: a concurrent submit freezes the report, the update
+  // matches nothing and the caller gets a 409 instead of silently repointing a
+  // reviewed report at another project/manager.
+  const touched = await database
+    .update(reports)
+    .set({ projectId, assignedManagerId, updatedAt: new Date() })
+    .where(and(eq(reports.id, reportId), inArray(reports.status, ['DRAFT', 'NEEDS_CORRECTION'])))
+    .returning({ id: reports.id })
+  if (touched.length === 0) {
+    throw createError({ statusCode: 409, statusMessage: 'Report is no longer editable' })
+  }
+
   const latest = await getLatestVersion(database, reportId)
 
   if (latest && latest.submittedAt === null) {
@@ -110,16 +133,24 @@ export async function saveContent(
       .set({ ...content })
       .where(and(eq(reportVersions.id, latest.id), isNull(reportVersions.submittedAt)))
       .returning({ id: reportVersions.id })
-    if (updated.length) {
-      await database.update(reports).set({ projectId, assignedManagerId, updatedAt: new Date() }).where(eq(reports.id, reportId))
-      return updated[0].id
-    }
+    if (updated.length) return updated[0].id
   }
 
-  const [created] = await database
-    .insert(reportVersions)
-    .values({ reportId, versionNo: (latest?.versionNo ?? 0) + 1, ...content })
-    .returning({ id: reportVersions.id })
-  await database.update(reports).set({ projectId, assignedManagerId, updatedAt: new Date() }).where(eq(reports.id, reportId))
-  return created.id
+  // versionNo is computed outside a transaction: a concurrent submit can take
+  // the same number and hit the unique index — re-read and insert once more.
+  for (let attempt = 0; ; attempt++) {
+    const current = attempt === 0 ? latest : await getLatestVersion(database, reportId)
+    try {
+      const [created] = await database
+        .insert(reportVersions)
+        .values({ reportId, versionNo: (current?.versionNo ?? 0) + 1, ...content })
+        .returning({ id: reportVersions.id })
+      return created.id
+    } catch (error) {
+      if ((error as { code?: string }).code !== '23505') throw error
+      if (attempt > 0) {
+        throw createError({ statusCode: 409, statusMessage: 'Report changed during save — try again' })
+      }
+    }
+  }
 }

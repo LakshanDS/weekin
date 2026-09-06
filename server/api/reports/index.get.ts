@@ -21,8 +21,8 @@ function buildTextFilter(q: string) {
 
 export default defineEventHandler(async (event) => {
   const session = requireUser(event)
-  const query = await getValidatedQuery(event, reportListQuerySchema.parse)
-  const database = useDatabase()
+  const query = validateQuery(event, reportListQuerySchema)
+  const database = useDatabase(event)
 
   const filters = [
     // Members are hard-scoped to their own rows regardless of query params.
@@ -37,6 +37,16 @@ export default defineEventHandler(async (event) => {
     query.q ? buildTextFilter(query.q) : undefined,
   ].filter((f) => f !== undefined)
   const where = filters.length ? and(...filters) : undefined
+
+  // Count skips the manager/project joins — they can't change it. users/
+  // projects are joined only when the text filter references them.
+  let countQuery = database.select({ value: count() }).from(reports).$dynamic()
+  if (query.q) {
+    countQuery = countQuery
+      .innerJoin(users, eq(users.id, reports.userId))
+      .leftJoin(projects, eq(projects.id, reports.projectId))
+  }
+  if (where) countQuery = countQuery.where(where)
 
   const [rows, [total]] = await Promise.all([
     database
@@ -64,12 +74,7 @@ export default defineEventHandler(async (event) => {
       .orderBy(desc(reports.weekStart), desc(reports.id))
       .limit(query.pageSize)
       .offset((query.page - 1) * query.pageSize),
-    // Same joins as the list query: the text filter can reference users/projects.
-    database.select({ value: count() }).from(reports)
-      .innerJoin(users, eq(users.id, reports.userId))
-      .leftJoin(projects, eq(projects.id, reports.projectId))
-      .leftJoin(managerUsers, eq(managerUsers.id, reports.assignedManagerId))
-      .where(where),
+    countQuery,
   ])
 
   return { reports: rows, total: total.value, page: query.page, pageSize: query.pageSize }

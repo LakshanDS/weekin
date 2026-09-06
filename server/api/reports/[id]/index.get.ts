@@ -5,8 +5,7 @@ import { loadReportFor, getVisibleVersion } from '../../../utils/reports'
 // GET /api/reports/:id — full detail: content under review (or the owner's
 // draft-in-progress), review comments, and version metadata.
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  const { database, report, isOwner } = await loadReportFor(event, Number(id))
+  const { database, report, isOwner } = await loadReportFor(event, parseIdParam(event))
 
   const version = await getVisibleVersion(database, report.id, isOwner)
 

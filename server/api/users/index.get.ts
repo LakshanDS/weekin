@@ -4,7 +4,7 @@ import { users } from '../../database/schema'
 // GET /api/users — full user list (manager only)
 export default defineEventHandler(async (event) => {
   await requireManager(event)
-  const database = useDatabase()
+  const database = useDatabase(event)
   return {
     users: await database
       .select({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status, createdAt: users.createdAt })
