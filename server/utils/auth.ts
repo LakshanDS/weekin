@@ -1,7 +1,4 @@
-import { eq } from 'drizzle-orm'
 import { SignJWT, jwtVerify } from 'jose'
-import { users } from '../database/schema'
-import { useDatabase } from './database'
 import bcrypt from 'bcryptjs'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
@@ -77,15 +74,7 @@ export async function requireManager(event: H3Event): Promise<SessionUser> {
   if (user.role !== 'MANAGER') {
     throw createError({ statusCode: 403, statusMessage: 'Manager access required' })
   }
-  // The JWT is stateless: re-check the account still exists and is still a
-  // manager, so removed or demoted accounts lose manager access immediately.
-  const database = useDatabase()
-  const [current] = await database
-    .select({ role: users.role })
-    .from(users)
-    .where(eq(users.id, user.id))
-  if (!current || current.role !== 'MANAGER') {
-    throw createError({ statusCode: 403, statusMessage: 'Manager access required' })
-  }
+  // The global middleware re-checks status/role in the DB on every /api
+  // request, so demotion or deletion takes effect on the very next request.
   return user
 }

@@ -8,6 +8,20 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   vite: { plugins: [tailwindcss()] },
 
+  // Baseline security headers. A full CSP would break Nuxt's inline
+  // styles/scripts — report-only CSP is territory for later.
+  routeRules: {
+    '/**': {
+      headers: {
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Content-Security-Policy': "frame-ancestors 'none'",
+        // Only enforced over HTTPS; harmless on localhost dev.
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+      },
+    },
+  },
+
   components: [{ path: '~/components', pathPrefix: false }],
 
   runtimeConfig: {

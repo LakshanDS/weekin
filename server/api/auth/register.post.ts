@@ -14,18 +14,26 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: 'Email is already registered' })
   }
 
-  const [user] = await database
-    .insert(users)
-    .values({
-      name: body.name,
-      email,
-      passwordHash: await hashPassword(body.password),
-      role: 'MEMBER',
-      status: 'PENDING',
-    })
-    .returning({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status })
+  try {
+    const [user] = await database
+      .insert(users)
+      .values({
+        name: body.name,
+        email,
+        passwordHash: await hashPassword(body.password),
+        role: 'MEMBER',
+        status: 'PENDING',
+      })
+      .returning({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status })
 
-  await setSessionCookie(event, { id: user.id, role: user.role })
-  setResponseStatus(event, 201)
-  return { user }
+    await setSessionCookie(event, { id: user.id, role: user.role })
+    setResponseStatus(event, 201)
+    return { user }
+  } catch (err) {
+    // Concurrent registration beat the pre-check to the unique constraint.
+    if ((err as { code?: string }).code === '23505') {
+      throw createError({ statusCode: 409, statusMessage: 'Email is already registered' })
+    }
+    throw err
+  }
 })
