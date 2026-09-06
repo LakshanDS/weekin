@@ -73,8 +73,11 @@ async function load() {
     ])
     detail.value = d
     versions.value = v.versions
-  } catch {
-    error.value = 'Report not found.'
+  } catch (err) {
+    const e = err as { statusCode?: number; data?: { statusMessage?: string } }
+    error.value = e.statusCode === 404
+      ? 'Report not found.'
+      : e.data?.statusMessage ?? 'Something went wrong — try again.'
   }
 }
 await load()
