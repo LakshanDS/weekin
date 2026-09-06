@@ -132,7 +132,7 @@ function versionOutcome(versionNo: number): 'approved' | 'rejected' | 'open' {
   const comments = detail.value?.comments.filter((c) => c.versionNo === versionNo) ?? []
   if (comments.some((c) => c.action === 'APPROVE')) return 'approved'
   if (comments.some((c) => c.action === 'REQUEST_CHANGES')) return 'rejected'
-  // A silent approval leaves no comment row; still tint the version that was approved.
+  // Approvals can lack a comment row (seeded data); still tint the version that was approved.
   if (detail.value?.report.status === 'APPROVED' && versionNo === latestSubmittedVersionNo.value) return 'approved'
   return 'open'
 }
