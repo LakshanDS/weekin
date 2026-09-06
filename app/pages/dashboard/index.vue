@@ -43,14 +43,17 @@ const queue = ref<QueueRow[]>([])
 
 async function load() {
   loading.value = true
-  const [dashboard, reviewQueue] = await Promise.all([
-    $fetch<DashboardData>(`/api/dashboard?week=${week.value}`),
-    $fetch<{ reports: QueueRow[] }>('/api/reports?status=SUBMITTED&pageSize=5'),
-  ])
-  data.value = dashboard
-  queue.value = reviewQueue.reports
-  projectPage.value = 1
-  loading.value = false
+  try {
+    const [dashboard, reviewQueue] = await Promise.all([
+      $fetch<DashboardData>(`/api/dashboard?week=${week.value}`),
+      $fetch<{ reports: QueueRow[] }>('/api/reports?status=SUBMITTED&pageSize=5'),
+    ])
+    data.value = dashboard
+    queue.value = reviewQueue.reports
+    projectPage.value = 1
+  } finally {
+    loading.value = false
+  }
 }
 
 watch(week, load)

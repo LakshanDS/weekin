@@ -56,6 +56,12 @@ const STATUS_OPTIONS: { value: '' | ReportStatus; label: string }[] = [
   { value: 'APPROVED', label: 'Approved' },
 ]
 
+// Label for the filtered-empty message; "weekly" when no status tab is active.
+const filterLabel = computed(() => {
+  if (!statusFilter.value) return 'weekly'
+  return STATUS_OPTIONS.find((o) => o.value === statusFilter.value)?.label.toLowerCase() ?? 'weekly'
+})
+
 async function load() {
   if (!loaded.value) loading.value = true
   try {

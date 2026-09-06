@@ -34,12 +34,15 @@ const STATUS_OPTIONS: { value: '' | 'SUBMITTED' | 'RESUBMITTED'; label: string }
 ]
 
 onMounted(async () => {
-  const res = await $fetch<{ reports: QueueRow[] }>('/api/reports?status=SUBMITTED&pageSize=100')
-  // Newest submissions on top.
-  rows.value = [...res.reports].sort(
-    (a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '') || b.id - a.id,
-  )
-  loading.value = false
+  try {
+    const res = await $fetch<{ reports: QueueRow[] }>('/api/reports?status=SUBMITTED&pageSize=100')
+    // Newest submissions on top.
+    rows.value = [...res.reports].sort(
+      (a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '') || b.id - a.id,
+    )
+  } finally {
+    loading.value = false
+  }
 })
 
 const oldest = computed(() => rows.value.at(-1) ?? null)
