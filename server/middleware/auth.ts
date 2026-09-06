@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   // The JWT is stateless: re-check the account on every request so deleted
   // or demoted accounts lose access immediately, and trust the DB role,
   // never the stale JWT one.
-  const database = useDatabase()
+  const database = useDatabase(event)
   const [current] = await database
     .select({ status: users.status, role: users.role })
     .from(users)
