@@ -123,8 +123,7 @@ async function save(submitAfter: boolean) {
 }
 
 onMounted(async () => {
-  // Members only get their assigned projects; the edit flow may still point at
-  // a project the assignment was removed from — keep it selectable.
+  // The edit flow may hold a project the member was since removed from — keep it selectable.
   const [projectRes, managerRes] = await Promise.all([
     $fetch<{ projects: { id: number; name: string }[] }>('/api/projects?mine=1'),
     $fetch<{ managers: { id: number; name: string }[] }>('/api/users/managers'),

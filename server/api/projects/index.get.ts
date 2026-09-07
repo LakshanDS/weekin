@@ -1,8 +1,6 @@
 import { and, asc, countDistinct, eq, isNotNull } from 'drizzle-orm'
 import { projectMembers, projects, reports } from '../../database/schema'
 
-// GET /api/projects — list all (or ?mine=1: only projects the caller is
-// assigned to) with how many reports and members each one has
 export default defineEventHandler(async (event) => {
   const user = requireUser(event)
   const mine = getQuery(event).mine === '1'

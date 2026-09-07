@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await validateBody(event, updateReportContentSchema)
-  // Members can only move a report to a project they are assigned to; keeping
-  // the stored project stays allowed even if the assignment was since removed.
+  // Members may switch only to assigned projects; keeping the stored one is always allowed.
   if (body.projectId && body.projectId !== report.projectId && session.role === 'MEMBER') {
     const [assigned] = await database
       .select({ id: projectMembers.id })

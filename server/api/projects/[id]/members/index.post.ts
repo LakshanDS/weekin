@@ -4,7 +4,6 @@ import { projectMembers, projects, users } from '../../../../database/schema'
 
 const memberSchema = z.object({ userId: z.number().int().positive() })
 
-// POST /api/projects/:id/members — assign a user to the project (manager only)
 export default defineEventHandler(async (event) => {
   await requireManager(event)
   const id = parseIdParam(event)

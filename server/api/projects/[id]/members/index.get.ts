@@ -1,7 +1,6 @@
 import { asc, count, eq } from 'drizzle-orm'
 import { projectMembers, projects, reports, users } from '../../../../database/schema'
 
-// GET /api/projects/:id/members — assigned members + basic project info (manager only)
 export default defineEventHandler(async (event) => {
   await requireManager(event)
   const id = parseIdParam(event)

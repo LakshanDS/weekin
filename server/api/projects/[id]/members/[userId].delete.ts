@@ -1,7 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { projectMembers } from '../../../../database/schema'
 
-// DELETE /api/projects/:id/members/:userId — unassign a member (manager only)
 export default defineEventHandler(async (event) => {
   await requireManager(event)
   const id = parseIdParam(event)

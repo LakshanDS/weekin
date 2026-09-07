@@ -70,8 +70,7 @@ export const reports = pgTable(
   ],
 )
 
-// Managers assign members to projects; the report form then only offers a
-// member's assigned projects (enforced on report create/update).
+// Manager-assigned memberships gate which projects a member can file reports against.
 export const projectMembers = pgTable(
   'project_members',
   {

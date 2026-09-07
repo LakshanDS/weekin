@@ -454,11 +454,8 @@ async function main() {
     .values(PROJECTS.map((p) => ({ name: p.name, description: p.description })))
     .returning()
 
-  // Every member is assigned their primary project plus one more (chosen via
-  // the PRNG) — the report form only offers assigned projects, so members need
-  // at least two to pick from. The 30% chance of a random project per week
-  // below stays: past reports may predate the assignments. A separate PRNG
-  // keeps the report data stream identical to before memberships existed.
+  // Two assignments per member — the form only offers assigned projects, so each
+  // member needs a choice. memberRnd keeps the report data stream unchanged.
   const memberRnd = mulberry32(20260907)
   await database.insert(projectMembers).values(
     members.flatMap((member, mi) => {

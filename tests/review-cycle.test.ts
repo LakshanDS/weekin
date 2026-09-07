@@ -58,8 +58,7 @@ const content = {
 }
 
 describe('report review cycle & RBAC', () => {
-  // A future week: the seed never writes ahead, so this cannot collide with
-  // seeded reports regardless of the date the seed last ran.
+  // A future week never collides with seeded reports, whenever the seed last ran.
   const week = { weekStart: '2026-09-14', weekEnd: '2026-09-18' }
   let alice: Jar
   let bob: Jar
@@ -206,7 +205,6 @@ describe('project membership gates report projects', () => {
     expect(blocked.status).toBe(403)
     expect(blocked.json.message ?? blocked.json.statusMessage).toContain('not assigned')
 
-    // Assigned project → goes through
     const ok = await call('POST', '/reports', alice, {
       projectId: assigned.id,
       assignedManagerId: managerId,

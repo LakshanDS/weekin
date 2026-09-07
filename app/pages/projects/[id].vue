@@ -68,7 +68,6 @@ async function run(action: () => Promise<unknown>) {
   }
 }
 
-// Every ACTIVE user drives the manage-members modal; assigned ones start checked.
 const allActive = computed(() =>
   allUsers.value
     .filter((u) => u.status === 'ACTIVE')
@@ -98,8 +97,6 @@ function toggleAll() {
   selectedIds.value = allSelected.value ? [] : allActive.value.map((u) => u.id)
 }
 
-// Diff the draft selection against the current memberships: new checks are
-// added, removed checks are deleted.
 async function saveAssign() {
   assigning.value = true
   const assignedIds = new Set(members.value.map((m) => m.id))
