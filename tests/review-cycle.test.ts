@@ -58,7 +58,9 @@ const content = {
 }
 
 describe('report review cycle & RBAC', () => {
-  const week = { weekStart: '2026-09-07', weekEnd: '2026-09-11' }
+  // A future week: the seed never writes ahead, so this cannot collide with
+  // seeded reports regardless of the date the seed last ran.
+  const week = { weekStart: '2026-09-14', weekEnd: '2026-09-18' }
   let alice: Jar
   let bob: Jar
   let manager: Jar
@@ -171,5 +173,47 @@ describe('report review cycle & RBAC', () => {
     expect((await call('GET', '/dashboard', alice)).status).toBe(403)
     expect((await call('GET', '/users', bob)).status).toBe(403)
     expect((await call('GET', '/dashboard', manager)).status).toBe(200)
+  })
+})
+
+describe('project membership gates report projects', () => {
+  const PASS = 'password123'
+  // Another future week, distinct from the review-cycle one above.
+  const week = { weekStart: '2026-09-21', weekEnd: '2026-09-25' }
+
+  it('rejects an unassigned project with 403 and accepts an assigned one', async () => {
+    const { status, setCookie } = await call('POST', '/auth/login', {}, { email: 'alice@demo.io', password: PASS })
+    expect(status).toBe(200)
+    const alice: Jar = { cookie: setCookie!.split(';')[0] }
+    const managers = await call('GET', '/users/managers', alice)
+    const managerId = managers.json.managers[0].id
+
+    const all = await call('GET', '/projects', alice)
+    const mine = await call('GET', '/projects?mine=1', alice)
+    expect(all.status).toBe(200)
+    expect(mine.status).toBe(200)
+    const assignedIds = new Set(mine.json.projects.map((p: any) => p.id))
+    const unassigned = all.json.projects.find((p: any) => !assignedIds.has(p.id))
+    const assigned = mine.json.projects[0]
+
+    // Unassigned project → blocked server-side, not just hidden in the form
+    const blocked = await call('POST', '/reports', alice, {
+      projectId: unassigned.id,
+      assignedManagerId: managerId,
+      ...week,
+      content,
+    })
+    expect(blocked.status).toBe(403)
+    expect(blocked.json.message ?? blocked.json.statusMessage).toContain('not assigned')
+
+    // Assigned project → goes through
+    const ok = await call('POST', '/reports', alice, {
+      projectId: assigned.id,
+      assignedManagerId: managerId,
+      ...week,
+      content,
+    })
+    expect(ok.status).toBe(201)
+    expect(ok.json.report.projectId).toBe(assigned.id)
   })
 })
