@@ -41,7 +41,7 @@ useHead({ title: 'New report' })
     </section>
 
     <div class="rise mt-6 rounded-[6px] border border-ink-subtle bg-white p-6" style="animation-delay: 0.3s">
-      <ReportForm @saved="(id) => router.push(`/reports/${id}`)" />
+      <ReportForm @saved="(id) => router.replace(`/reports/${id}`)" />
     </div>
   </div>
 </template>

@@ -80,7 +80,7 @@ onMounted(async () => {
     </p>
 
     <div v-else-if="initial" class="rise mt-6 rounded-[6px] border border-ink-subtle bg-white p-6" style="animation-delay: 0.3s">
-      <ReportForm :key="initial.reportId" :initial="initial" @saved="(id) => router.push(`/reports/${id}`)" />
+      <ReportForm :key="initial.reportId" :initial="initial" @saved="(id) => router.replace(`/reports/${id}`)" />
     </div>
   </div>
 </template>

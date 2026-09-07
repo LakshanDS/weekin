@@ -52,10 +52,12 @@ const versions = ref<VersionFull[]>([])
 const error = ref('')
 
 // Back returns to wherever the user came from; dashboard visits continue to the queue, direct loads fall back to the list.
+// Arriving here from the editor (saved → navigate) is not "back" — the list is.
 const backTo = ref('/reports')
 onMounted(() => {
   const back = router.options.history.state.back
-  if (typeof back === 'string' && back.startsWith('/')) {
+  const fromEditor = typeof back === 'string' && (back === '/reports/new' || back === `/reports/${reportId}` || back === `/reports/${reportId}/edit`)
+  if (typeof back === 'string' && back.startsWith('/') && !fromEditor) {
     backTo.value = back.startsWith('/dashboard') ? '/review' : back
   }
 })
