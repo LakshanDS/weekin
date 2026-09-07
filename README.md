@@ -180,8 +180,10 @@ The Nuxt server layer targets Cloudflare Workers via Nitro's `cloudflare_module`
 ```bash
 bun run build:cf       # NITRO_PRESET=cloudflare_module nuxt build
 bun run dev:cf         # local preview on the Workers runtime (syncs .env -> .dev.vars)
-bunx wrangler deploy   # after `wrangler login`
+bun run deploy         # build + wrangler deploy, after `wrangler login`
 ```
+
+Live: https://weekin.lakshandesilva112.workers.dev
 
 Continuous deployment runs through GitHub Actions (`.github/workflows/deploy.yml`): every push runs the integration tests against a real Postgres service container, and pushes to `main` build with the Workers preset and deploy via `wrangler`. Add two repository secrets to enable the deploy job: `CLOUDFLARE_API_TOKEN` (Workers deploy permission) and `CLOUDFLARE_ACCOUNT_ID`.
 

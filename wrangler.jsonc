@@ -1,7 +1,7 @@
 // Cloudflare Workers config. Nitro merges this into the generated wrangler
 // config when building with the cloudflare_module preset.
 // Local check:  bun run build:cf && bunx wrangler dev
-// Deploy:       bunx wrangler deploy   (after `wrangler login`)
+// Deploy:       bun run deploy   (after `wrangler login`)
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "weekin",

@@ -34,6 +34,8 @@ concepts/
 # Local-only working files
 quality-check.md
 plan.md
-scripts/
 docs/
-.github/
+
+# Local .github scratch — but the CI workflow ships with the repo
+.github/*
+!.github/workflows/
