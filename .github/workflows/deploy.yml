@@ -1,0 +1,78 @@
+name: CI & Deploy (Cloudflare Workers)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: weekly_app
+          POSTGRES_PASSWORD: weekly_app_dev
+          POSTGRES_DB: weekly_reports
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U weekly_app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NUXT_DATABASE_URL: postgres://weekly_app:weekly_app_dev@localhost:5432/weekly_reports
+      NUXT_JWT_SECRET: ci-secret-not-for-production
+      ALLOW_DEMO_SEED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Migrate & seed database
+        run: |
+          bun run db:migrate
+          bun run db:seed:demo
+
+      - name: Start dev server
+        run: |
+          bun run dev &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/ > /dev/null && break
+            sleep 2
+          done
+
+      - name: Run integration tests (review cycle & RBAC)
+        run: bun run test
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build (Cloudflare Workers preset)
+        run: bun run build:cf
+
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
