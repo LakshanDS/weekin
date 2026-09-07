@@ -1,5 +1,5 @@
-import { asc, eq } from 'drizzle-orm'
-import { projectMembers, projects, users } from '../../../../database/schema'
+import { asc, count, eq } from 'drizzle-orm'
+import { projectMembers, projects, reports, users } from '../../../../database/schema'
 
 // GET /api/projects/:id/members — assigned members + basic project info (manager only)
 export default defineEventHandler(async (event) => {
@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const database = useDatabase(event)
 
   const [project] = await database
-    .select({ id: projects.id, name: projects.name, description: projects.description })
+    .select({ id: projects.id, name: projects.name, description: projects.description, createdAt: projects.createdAt })
     .from(projects)
     .where(eq(projects.id, id))
   if (!project) {
@@ -27,5 +27,11 @@ export default defineEventHandler(async (event) => {
     .innerJoin(users, eq(users.id, projectMembers.userId))
     .where(eq(projectMembers.projectId, id))
     .orderBy(asc(users.name))
-  return { project, members }
+
+  const [{ value: reportCount }] = await database
+    .select({ value: count() })
+    .from(reports)
+    .where(eq(reports.projectId, id))
+
+  return { project, members, reportCount }
 })

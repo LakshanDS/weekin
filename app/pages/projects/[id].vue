@@ -3,9 +3,10 @@ definePageMeta({ role: 'MANAGER' })
 
 const route = useRoute()
 const projectId = Number(route.params.id)
-useHead({ title: 'Project members' })
 
 const { confirm } = useConfirm()
+
+const dt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 
 interface Member {
   id: number
@@ -19,10 +20,13 @@ interface ProjectInfo {
   id: number
   name: string
   description: string | null
+  createdAt: string
 }
 
 const project = ref<ProjectInfo | null>(null)
+useHead({ title: () => project.value?.name ?? 'Project' })
 const members = ref<Member[]>([])
+const reportCount = ref(0)
 const loading = ref(true)
 const missing = ref(false)
 const error = ref('')
@@ -34,11 +38,12 @@ async function load() {
   missing.value = false
   try {
     const [res, usersRes] = await Promise.all([
-      $fetch<{ project: ProjectInfo; members: Member[] }>(`/api/projects/${projectId}/members`),
+      $fetch<{ project: ProjectInfo; members: Member[]; reportCount: number }>(`/api/projects/${projectId}/members`),
       $fetch<{ users: { id: number; name: string; email: string; role: string; status: string }[] }>('/api/users'),
     ])
     project.value = res.project
     members.value = res.members
+    reportCount.value = res.reportCount
     allUsers.value = usersRes.users
   } catch (err) {
     const e = err as { statusCode?: number; data?: { statusMessage?: string } }
@@ -54,6 +59,7 @@ async function run(action: () => Promise<unknown>) {
   error.value = ''
   try {
     await action()
+    await load()
     return true
   } catch (err) {
     const e = err as { data?: { statusMessage?: string } }
@@ -62,10 +68,10 @@ async function run(action: () => Promise<unknown>) {
   }
 }
 
-// ACTIVE users not yet assigned — the assign-users modal
-const candidates = computed(() =>
+// Every ACTIVE user drives the manage-members modal; assigned ones start checked.
+const allActive = computed(() =>
   allUsers.value
-    .filter((u) => u.status === 'ACTIVE' && !members.value.some((m) => m.id === u.id))
+    .filter((u) => u.status === 'ACTIVE')
     .sort((a, b) => a.name.localeCompare(b.name)),
 )
 
@@ -74,7 +80,9 @@ const selectedIds = ref<number[]>([])
 const assigning = ref(false)
 
 function openAssign() {
-  selectedIds.value = []
+  selectedIds.value = allUsers.value
+    .filter((u) => u.status === 'ACTIVE' && members.value.some((m) => m.id === u.id))
+    .map((u) => u.id)
   showAssign.value = true
 }
 
@@ -84,22 +92,34 @@ function toggle(userId: number) {
     : [...selectedIds.value, userId]
 }
 
-async function addSelected() {
-  if (!selectedIds.value.length) return
+const allSelected = computed(() => allActive.value.length > 0 && selectedIds.value.length === allActive.value.length)
+
+function toggleAll() {
+  selectedIds.value = allSelected.value ? [] : allActive.value.map((u) => u.id)
+}
+
+// Diff the draft selection against the current memberships: new checks are
+// added, removed checks are deleted.
+async function saveAssign() {
   assigning.value = true
-  const results = await Promise.allSettled(
-    selectedIds.value.map((userId) =>
-      $fetch(`/api/projects/${projectId}/members`, { method: 'POST', body: { userId } }),
-    ),
-  )
+  const assignedIds = new Set(members.value.map((m) => m.id))
+  const ops = [
+    ...selectedIds.value
+      .filter((id) => !assignedIds.has(id))
+      .map((userId) => $fetch(`/api/projects/${projectId}/members`, { method: 'POST', body: { userId } })),
+    ...[...assignedIds]
+      .filter((id) => !selectedIds.value.includes(id))
+      .map((userId) => $fetch(`/api/projects/${projectId}/members/${userId}`, { method: 'DELETE' })),
+  ]
+  const results = await Promise.allSettled(ops)
   assigning.value = false
   showAssign.value = false
   const failed = results.filter((r) => r.status === 'rejected').length
   await load()
   if (failed) {
-    error.value = failed === selectedIds.value.length
-      ? 'Could not add the selected members.'
-      : `${failed} of ${selectedIds.value.length} members could not be added.`
+    error.value = failed === ops.length
+      ? 'Could not update the member list.'
+      : `${failed} of ${ops.length} changes could not be saved.`
   }
 }
 
@@ -148,7 +168,12 @@ async function remove(member: Member) {
         <p class="font-mono text-[13px] font-semibold tracking-[0.15em] uppercase text-ink">
           {{ members.length }} member{{ members.length === 1 ? '' : 's' }}
         </p>
-        <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">assigned</p>
+        <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
+          {{ reportCount }} report{{ reportCount === 1 ? '' : 's' }}
+        </p>
+        <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
+          created {{ dt.format(new Date(project.createdAt)) }}
+        </p>
       </div>
     </section>
 
@@ -171,22 +196,26 @@ async function remove(member: Member) {
           </p>
           <button
             type="button"
-            :disabled="candidates.length === 0"
-            class="cursor-pointer rounded-[10px] bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a] disabled:cursor-not-allowed disabled:opacity-50"
-            :title="candidates.length === 0 ? 'Everyone is already assigned' : 'Assign members to this project'"
+            class="cursor-pointer rounded-[10px] bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a]"
+            title="Assign or remove members of this project"
             @click="openAssign"
           >
-            Assign users
+            Manage members
           </button>
         </div>
 
         <div v-if="members.length" class="mt-2.5 border-y border-ink-subtle">
-          <NuxtLink
+          <div
             v-for="member in members"
             :key="member.id"
-            :to="`/members/${member.id}`"
-            class="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-b border-ink-subtle px-3 py-3.5 transition-colors last:border-b-0 hover:bg-ink-tint"
+            class="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-b border-ink-subtle px-3 py-3.5 transition-colors last:border-b-0 hover:bg-ink-tint"
           >
+            <NuxtLink
+              :to="`/members/${member.id}`"
+              class="absolute inset-0 z-0"
+              :aria-label="`Open ${member.name}'s profile`"
+              :title="`Open ${member.name}'s profile`"
+            />
             <span class="flex min-w-0 items-center gap-3">
               <span
                 class="flex size-8 shrink-0 items-center justify-center rounded-full font-mono text-[10.5px]"
@@ -209,16 +238,16 @@ async function remove(member: Member) {
               </span>
             </span>
 
-            <span class="flex items-center justify-end gap-2">
+            <span class="relative z-10 flex items-center justify-end gap-2">
               <button
                 type="button"
                 class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-correction transition-colors hover:border-correction/30 hover:bg-coral/10"
-                @click.stop="remove(member)"
+                @click="remove(member)"
               >
                 Remove
               </button>
             </span>
-          </NuxtLink>
+          </div>
         </div>
 
         <EmptyState v-else class="mt-2.5 border-y border-ink-subtle" title="No members yet">
@@ -247,8 +276,8 @@ async function remove(member: Member) {
         >
           <div class="flex items-start justify-between gap-4 p-6 pb-4">
             <div>
-              <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink-muted">Assign users</p>
-              <p class="mt-1 text-sm text-ink-soft">Pick who works on “{{ project?.name }}”.</p>
+              <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink-muted">Manage members</p>
+              <p class="mt-1 text-sm text-ink-soft">Checked users are assigned to “{{ project?.name }}” — uncheck to remove.</p>
             </div>
             <button
               type="button"
@@ -265,7 +294,7 @@ async function remove(member: Member) {
 
           <div class="min-h-0 flex-1 overflow-y-auto border-y border-ink-subtle">
             <label
-              v-for="user in candidates"
+              v-for="user in allActive"
               :key="user.id"
               class="flex cursor-pointer items-center gap-3 border-b border-ink-subtle px-6 py-3 transition-colors last:border-b-0 hover:bg-ink-tint"
             >
@@ -286,22 +315,32 @@ async function remove(member: Member) {
                 Manager
               </span>
             </label>
-            <p v-if="candidates.length === 0" class="px-6 py-8 text-center text-sm text-ink-muted">
-              Everyone is already assigned to this project.
+            <p v-if="allActive.length === 0" class="px-6 py-8 text-center text-sm text-ink-muted">
+              No active users yet — invite members from the Members page first.
             </p>
           </div>
 
           <div class="flex items-center justify-between gap-4 p-6">
-            <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
-              {{ selectedIds.length }} selected
-            </p>
+            <div class="flex items-center gap-4">
+              <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
+                {{ selectedIds.length }} of {{ allActive.length }} assigned
+              </p>
+              <button
+                type="button"
+                :disabled="allActive.length === 0"
+                class="cursor-pointer font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-soft transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                @click="toggleAll"
+              >
+                {{ allSelected ? 'Clear all' : 'Select all' }}
+              </button>
+            </div>
             <button
               type="button"
-              :disabled="selectedIds.length === 0 || assigning"
+              :disabled="assigning"
               class="cursor-pointer rounded-[10px] bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a] disabled:cursor-not-allowed disabled:opacity-50"
-              @click="addSelected"
+              @click="saveAssign"
             >
-              {{ assigning ? 'Adding…' : 'Add to project' }}
+              {{ assigning ? 'Saving…' : 'Save changes' }}
             </button>
           </div>
         </div>

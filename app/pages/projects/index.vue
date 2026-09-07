@@ -196,14 +196,19 @@ const newestCreated = computed(() => {
       <!-- List -->
       <section class="mt-6 flex flex-1 flex-col">
         <div v-if="filtered.length" class="border-t border-ink-subtle">
-          <NuxtLink
+          <div
             v-for="project in filtered"
             :key="project.id"
-            :to="`/projects/${project.id}`"
-            class="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_105px_105px_110px_auto]"
+            class="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_105px_105px_110px_auto]"
           >
+            <NuxtLink
+              :to="`/projects/${project.id}`"
+              class="absolute inset-0 z-0"
+              :aria-label="`Manage members of ${project.name}`"
+              :title="`Manage members of ${project.name}`"
+            />
             <span class="min-w-0">
-              <span class="block truncate text-sm font-semibold" :title="`Manage members of ${project.name}`">
+              <span class="block truncate text-sm font-semibold">
                 {{ project.name }}
               </span>
               <span class="block truncate text-[12px] text-ink-muted">{{ project.description ?? 'No description' }}</span>
@@ -221,23 +226,23 @@ const newestCreated = computed(() => {
               {{ dt.format(new Date(project.createdAt)) }}
             </span>
 
-            <span class="flex items-center justify-end gap-2">
+            <span class="relative z-10 flex items-center justify-end gap-2">
               <button
                 type="button"
                 class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-soft transition-colors hover:border-ink-subtle hover:text-ink"
-                @click.stop="openEdit(project)"
+                @click="openEdit(project)"
               >
                 Edit
               </button>
               <button
                 type="button"
                 class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-correction transition-colors hover:border-correction/30 hover:bg-coral/10"
-                @click.stop="remove(project)"
+                @click="remove(project)"
               >
                 Delete
               </button>
             </span>
-          </NuxtLink>
+          </div>
         </div>
 
         <!-- Empty state -->
