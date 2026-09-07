@@ -179,7 +179,7 @@ The Nuxt server layer targets Cloudflare Workers via Nitro's `cloudflare_module`
 
 ```bash
 bun run build:cf       # NITRO_PRESET=cloudflare_module nuxt build
-bun run dev:cf         # local preview on the Workers runtime (syncs .env -> .dev.vars)
+bun run dev:cf         # local preview on the Workers runtime (reads .env directly)
 bun run deploy         # build + wrangler deploy, after `wrangler login`
 ```
 

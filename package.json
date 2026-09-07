@@ -14,7 +14,7 @@
     "db:seed:prod": "bun server/database/seed.prod.ts",
     "test": "vitest run",
     "build:cf": "NITRO_PRESET=cloudflare_module nuxt build",
-    "dev:cf": "bun scripts/sync-dev-vars.mjs && bunx wrangler dev --port 8787",
+    "dev:cf": "bunx wrangler dev --port 8787",
     "deploy": "NITRO_PRESET=cloudflare_module nuxt build && bunx wrangler deploy"
   },
   "dependencies": {
