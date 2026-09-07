@@ -6,7 +6,7 @@ import { hashPassword, verifyPassword, requireUser } from '../../utils/auth'
 // PUT /api/auth/password — change the signed-in user's own password
 export default defineEventHandler(async (event) => {
   const session = requireUser(event)
-  rateLimit(`password:${session.id}`, 5, 15 * 60_000)
+  rateLimit(`password:${session.id}`, 15, 60_000)
   const body = await validateBody(event, changePasswordSchema)
   const database = useDatabase()
 

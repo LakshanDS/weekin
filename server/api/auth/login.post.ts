@@ -8,7 +8,7 @@ import { verifyPassword, setSessionCookie } from '../../utils/auth'
 const DUMMY_HASH = '$2b$10$hCXZ1SzBokBQl78czS60dOOG/5soMIyZdTLO19.A6f0kl34xNI0iq'
 
 export default defineEventHandler(async (event) => {
-  rateLimit(`login:${clientIp(event)}`, 20, 5 * 60_000)
+  rateLimit(`login:${clientIp(event)}`, 15, 60_000)
   const body = await validateBody(event, loginSchema)
   const database = useDatabase()
 

@@ -75,20 +75,74 @@ export function aiConfigured(): boolean {
   return Boolean(config.aiApiKey)
 }
 
-export async function callLLM(system: string, history: ChatMessage[]): Promise<string> {
+export interface ToolDef {
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+  execute(args: Record<string, unknown>): Promise<string>
+}
+
+interface LlmToolCall {
+  id: string
+  function: { name: string; arguments: string }
+}
+
+interface LlmMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool'
+  content: string | null
+  tool_calls?: LlmToolCall[]
+  tool_call_id?: string
+}
+
+// Chat with tools: executes model-requested tool calls and feeds results back
+// until the model answers in plain text. The final round omits `tools` to force
+// a text answer; tool errors go back to the model as results, not exceptions.
+export async function runAgentLoop(system: string, history: ChatMessage[], tools: ToolDef[], maxIterations = 3): Promise<string> {
   const config = useRuntimeConfig()
   const baseUrl = (config.aiBaseUrl || 'https://api.openai.com/v1').replace(/\/$/, '')
   const model = config.aiModel || 'gpt-4o-mini'
 
-  const res = await $fetch<{ choices: { message: { content: string } }[] }>(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${config.aiApiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'system', content: system }, ...history],
-      max_tokens: 600,
-      temperature: 0.3,
-    }),
-  })
-  return res.choices[0]?.message?.content?.trim() ?? 'No answer received.'
+  const messages: LlmMessage[] = [{ role: 'system', content: system }, ...history]
+  for (let round = 0; round < maxIterations + 2; round++) {
+    const res = await $fetch<{ choices: { message: LlmMessage }[] }>(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${config.aiApiKey}` },
+      // Provider capacity blips (Gemini 503/429) are transient — retry instead of failing the chat.
+      retry: 2,
+      retryDelay: 1_000,
+      retryStatusCodes: [429, 500, 502, 503, 504],
+      body: JSON.stringify({
+        model,
+        messages,
+        ...(round < maxIterations && {
+          tools: tools.map(({ name, description, parameters }) => ({
+            type: 'function',
+            function: { name, description, parameters },
+          })),
+        }),
+        max_tokens: 1500, // Gemini-family models spend thinking tokens from this budget
+        temperature: 0.3,
+      }),
+    })
+    const message = res.choices[0]?.message
+    const toolCalls = message?.tool_calls ?? []
+    if (!message || !toolCalls.length) return message?.content?.trim() || 'No answer received.'
+
+    messages.push({ role: 'assistant', content: message.content, tool_calls: toolCalls })
+    for (const call of toolCalls) {
+      messages.push({ role: 'tool', tool_call_id: call.id, content: await runTool(tools, call) })
+    }
+  }
+  return 'No answer received.'
+}
+
+async function runTool(tools: ToolDef[], call: LlmToolCall): Promise<string> {
+  const tool = tools.find((t) => t.name === call.function.name)
+  if (!tool) return JSON.stringify({ error: `unknown tool: ${call.function.name}` })
+  try {
+    const args = call.function.arguments ? (JSON.parse(call.function.arguments) as Record<string, unknown>) : {}
+    return await tool.execute(args)
+  } catch (err) {
+    return JSON.stringify({ error: err instanceof Error ? err.message : 'tool execution failed' })
+  }
 }
