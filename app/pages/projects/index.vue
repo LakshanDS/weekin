@@ -119,9 +119,9 @@ const newestCreated = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-1 flex-col">
     <!-- Briefing band -->
-    <section class="pt-4">
+    <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
           <h1
@@ -166,7 +166,7 @@ const newestCreated = computed(() => {
 
     <template v-else>
       <!-- Filters: search · add project -->
-      <div class="rise mt-5 flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
+      <div class="rise flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
         <input
           v-model="search"
           type="search"
@@ -188,12 +188,12 @@ const newestCreated = computed(() => {
         </button>
       </div>
 
-      <p v-if="error" role="alert" class="mt-4 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+      <p v-if="error" role="alert" class="mt-4 rounded-[6px] border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
         {{ error }}
       </p>
 
       <!-- List -->
-      <section class="mt-6">
+      <section class="mt-6 flex flex-1 flex-col">
         <div v-if="filtered.length" class="border-t border-ink-subtle">
           <div
             v-for="project in filtered"
@@ -233,28 +233,19 @@ const newestCreated = computed(() => {
         </div>
 
         <!-- Empty state -->
-        <div
+        <EmptyState
           v-else-if="projects.length === 0"
-          class="flex flex-col items-center gap-3 border-t border-ink-subtle py-12 text-center"
+          icon="+"
+          class="border-t border-ink-subtle"
+          title="No projects yet"
         >
-          <span
-            class="flex size-12 items-center justify-center rounded-full bg-ink-tint font-mono text-lg text-ink-muted"
-            aria-hidden="true"
-          >
-            +
-          </span>
-          <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
-            No projects yet
-          </p>
-          <p class="max-w-[400px] text-[14px] leading-[1.5] text-ink-soft">
-            Projects are the categories the team attaches to weekly reports. Create the first one with
-            the button above.
-          </p>
-        </div>
+          Projects are the categories the team attaches to weekly reports. Create the first one with
+          the button above.
+        </EmptyState>
 
-        <p v-else class="border-t border-ink-subtle py-8 text-center text-sm text-ink-muted">
+        <EmptyState v-else class="border-t border-ink-subtle" title="No matches">
           No projects match the current search.
-        </p>
+        </EmptyState>
       </section>
     </template>
 
@@ -289,7 +280,7 @@ const newestCreated = computed(() => {
             </button>
           </div>
 
-          <p v-if="error" role="alert" class="mt-4 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+          <p v-if="error" role="alert" class="mt-4 rounded-[6px] border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
             {{ error }}
           </p>
 

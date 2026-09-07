@@ -52,10 +52,12 @@ const versions = ref<VersionFull[]>([])
 const error = ref('')
 
 // Back returns to wherever the user came from; dashboard visits continue to the queue, direct loads fall back to the list.
+// Arriving here from the editor (saved → navigate) is not "back" — the list is.
 const backTo = ref('/reports')
 onMounted(() => {
   const back = router.options.history.state.back
-  if (typeof back === 'string' && back.startsWith('/')) {
+  const fromEditor = typeof back === 'string' && (back === '/reports/new' || back === `/reports/${reportId}` || back === `/reports/${reportId}/edit`)
+  if (typeof back === 'string' && back.startsWith('/') && !fromEditor) {
     backTo.value = back.startsWith('/dashboard') ? '/review' : back
   }
 })
@@ -152,12 +154,12 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
+  <div class="flex flex-1 flex-col">
     <p v-if="error" class="rise mt-8 font-mono text-sm text-correction">{{ error }}</p>
 
     <template v-else-if="detail">
       <!-- Briefing band -->
-      <section class="pt-4">
+      <section class="pt-4 pb-5">
         <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
           <div class="min-w-0 flex-1">
             <NuxtLink

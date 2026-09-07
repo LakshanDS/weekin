@@ -48,17 +48,6 @@ async function submit() {
     submitting.value = false
   }
 }
-
-const DEMOS = [
-  { label: 'Manager', email: 'manager@demo.io' },
-  { label: 'Member', email: 'alice@demo.io' },
-]
-
-function fillDemo(demoEmail: string) {
-  email.value = demoEmail
-  password.value = 'password123'
-  fieldErrors.value = {}
-}
 </script>
 
 <template>
@@ -88,7 +77,7 @@ function fillDemo(demoEmail: string) {
       </p>
 
       <form class="mt-9 grid gap-5" novalidate @submit.prevent="submit" style="animation-delay: 0.35s">
-        <p v-if="formError" role="alert" class="border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+        <p v-if="formError" role="alert" class="rounded-[6px] border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
           {{ formError }}
         </p>
 
@@ -136,25 +125,6 @@ function fillDemo(demoEmail: string) {
           {{ submitting ? 'Signing in…' : 'Sign in' }}
         </button>
       </form>
-
-      <div class="rise mt-11" style="animation-delay: 0.45s">
-        <p class="font-mono text-[11px] tracking-[0.15em] uppercase text-ink-muted">
-          Demo accounts · password123
-        </p>
-        <div class="mt-3 grid gap-2.5">
-          <button
-            v-for="demo in DEMOS"
-            :key="demo.email"
-            type="button"
-            class="flex w-full cursor-pointer items-center gap-3 rounded-md border border-ink-subtle bg-white px-3.5 py-2.5 text-left font-mono text-xs text-ink-soft transition-colors hover:border-[#d0d0d0] hover:bg-ink-tint"
-            @click="fillDemo(demo.email)"
-          >
-            <span class="min-w-16 font-medium tracking-[0.12em] uppercase text-ink">{{ demo.label }}</span>
-            <span class="text-ink-subtle">/</span>
-            <span>{{ demo.email }}</span>
-          </button>
-        </div>
-      </div>
     </div>
   </AuthShell>
 </template>

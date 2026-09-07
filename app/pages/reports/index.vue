@@ -206,9 +206,9 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-1 flex-col">
     <!-- Briefing band -->
-    <section class="pt-4">
+    <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
           <h1
@@ -252,7 +252,7 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
     <template v-else>
       <!-- Filters: search · week · status tabs · new report.
            Mobile: 2-col grid — selects pair up, week shares a row with the status tabs. -->
-      <div class="rise mt-5 flex flex-wrap items-center gap-x-3 gap-y-3 max-sm:grid max-sm:grid-cols-2" style="animation-delay: 0.3s">
+      <div class="rise flex flex-wrap items-center gap-x-3 gap-y-3 max-sm:grid max-sm:grid-cols-2" style="animation-delay: 0.3s">
         <input
           v-model="search"
           type="search"
@@ -324,7 +324,7 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
       </div>
 
       <!-- List, newest week first -->
-      <section class="mt-6">
+      <section class="mt-6 flex flex-1 flex-col">
         <div v-if="reports.length" class="border-t border-ink-subtle">
           <NuxtLink
             v-for="report in reports"
@@ -370,28 +370,19 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
         </div>
 
         <!-- Empty states -->
-        <div
+        <EmptyState
           v-else-if="total === 0 && !hasActiveFilters"
-          class="flex flex-col items-center gap-3 border-t border-ink-subtle py-12 text-center"
+          icon="+"
+          class="border-t border-ink-subtle"
+          title="No reports yet"
         >
-          <span
-            class="flex size-12 items-center justify-center rounded-full bg-ink-tint font-mono text-lg text-ink-muted"
-            aria-hidden="true"
-          >
-            +
-          </span>
-          <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
-            No reports yet
-          </p>
-          <p class="max-w-[400px] text-[14px] leading-[1.5] text-ink-soft">
-            <template v-if="isManager">Reports land here the moment a team member files one.</template>
-            <template v-else>Start your first week with the “New report” button above.</template>
-          </p>
-        </div>
+          <template v-if="isManager">Reports land here the moment a team member files one.</template>
+          <template v-else>Start your first week with the “New report” button above.</template>
+        </EmptyState>
 
-        <p v-else class="border-t border-ink-subtle py-8 text-center text-sm text-ink-muted">
+        <EmptyState v-else class="border-t border-ink-subtle" title="Nothing matches">
           No {{ filterLabel.toLowerCase() }} reports{{ statusFilter ? ' — try another status' : '' }}.
-        </p>
+        </EmptyState>
       </section>
 
       <!-- Pagination -->

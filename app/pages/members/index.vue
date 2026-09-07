@@ -157,9 +157,9 @@ function resetFilters() {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-1 flex-col">
     <!-- Briefing band -->
-    <section class="pt-4">
+    <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
           <h1
@@ -210,7 +210,7 @@ function resetFilters() {
 
     <template v-else>
       <!-- Filters: search · role · add member -->
-      <div class="rise mt-5 flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
+      <div class="rise flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
         <input
           v-model="search"
           type="search"
@@ -261,7 +261,7 @@ function resetFilters() {
         </button>
       </div>
 
-      <p v-if="error" role="alert" class="mt-4 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+      <p v-if="error" role="alert" class="mt-4 rounded-[6px] border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
         {{ error }}
       </p>
 
@@ -322,12 +322,13 @@ function resetFilters() {
       </section>
 
       <!-- Roster -->
-      <section class="mt-6">
-        <div class="border-t border-ink-subtle">
+      <section class="mt-6 flex flex-1 flex-col">
+        <div v-if="filtered.length" class="border-t border-ink-subtle">
           <div
             v-for="user in filtered"
             :key="user.id"
-            class="grid grid-cols-[minmax(0,1fr)_175px] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)_110px_175px]"
+            class="grid cursor-pointer grid-cols-[minmax(0,1fr)_175px] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)_110px_175px]"
+            @click="navigateTo(`/members/${user.id}`)"
           >
             <span class="flex min-w-0 items-center gap-3">
               <span
@@ -340,13 +341,12 @@ function resetFilters() {
               <span class="min-w-0 flex-1">
                 <span class="flex min-w-0 items-center gap-2">
                   <NuxtLink
-                    v-if="user.role === 'MEMBER'"
                     :to="`/members/${user.id}`"
-                    class="group/name truncate text-sm font-semibold hover:text-coral"
+                    class="truncate text-sm font-semibold hover:text-coral"
+                    @click.stop
                   >
                     {{ user.name }}
                   </NuxtLink>
-                  <b v-else class="truncate text-sm font-semibold">{{ user.name }}</b>
                   <span
                     v-if="user.role === 'MANAGER'"
                     class="shrink-0 rounded-full bg-approved-tint px-2 py-0.5 font-mono text-[9.5px] tracking-[0.12em] uppercase text-approved"
@@ -370,7 +370,7 @@ function resetFilters() {
               {{ dt.format(new Date(user.createdAt)) }}
             </span>
 
-            <span class="flex items-center justify-end gap-2">
+            <span class="flex items-center justify-end gap-2" @click.stop>
               <AppSelect
                 class="w-24 shrink-0"
                 :model-value="user.role"
@@ -394,12 +394,13 @@ function resetFilters() {
           </div>
         </div>
 
-        <p
-          v-if="filtered.length === 0"
-          class="border-t border-ink-subtle py-8 text-center text-sm text-ink-muted"
+        <EmptyState
+          v-else
+          class="border-t border-ink-subtle"
+          :title="roster.length === 0 ? 'No members yet' : 'No one matches'"
         >
-          {{ roster.length === 0 ? 'No approved members yet.' : 'No one matches the current filters.' }}
-        </p>
+          {{ roster.length === 0 ? 'Approved members will appear here once accounts are active.' : 'No one matches the current filters.' }}
+        </EmptyState>
       </section>
 
       <p class="mt-3 font-mono text-[11px] text-ink-muted">
@@ -437,7 +438,7 @@ function resetFilters() {
             </button>
           </div>
 
-          <p v-if="error" role="alert" class="mt-4 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+          <p v-if="error" role="alert" class="mt-4 rounded-[6px] border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
             {{ error }}
           </p>
 

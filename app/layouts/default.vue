@@ -64,7 +64,7 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <div class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-30 border-b border-ink-subtle bg-white">
       <div class="relative mx-auto flex h-[60px] w-full max-w-[1200px] items-center justify-between px-5 sm:px-8">
         <NuxtLink to="/" class="font-brand text-[22px] font-semibold tracking-[0.01em]">
@@ -160,7 +160,7 @@ watch(() => route.path, () => {
       </nav>
     </header>
 
-    <main class="mx-auto w-full max-w-[1200px] px-5 py-8 sm:px-8">
+    <main class="mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-5 py-8 sm:px-8">
       <slot />
     </main>
 

@@ -289,7 +289,7 @@ const MINI_SELECT = 'h-[38px] cursor-pointer rounded-md border border-ink-subtle
         @click="save(true)">
         {{ saving ? 'Submitting…' : week.reportId ? 'Save & resubmit' : 'Save & submit for review' }}
       </button>
-      <p v-if="!issues.length" class="font-mono text-[10.5px] tracking-[0.06em] text-ink-muted max-sm:col-span-3">
+      <p class="font-mono text-[10.5px] tracking-[0.06em] text-ink-muted max-sm:col-span-3">
         Submitting freezes this content as a version your manager reviews.
       </p>
     </div>

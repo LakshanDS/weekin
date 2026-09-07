@@ -20,7 +20,7 @@ Built for the Sisenco Digital full-stack technical assignment.
 
 ```
 app/                      Frontend (Vue pages, components, composables)
-  pages/                  login, register, reports, review, dashboard, team, members, projects
+  pages/                  login, register, pending, reports, review, dashboard, team, members, projects
   components/             UI + report + dashboard + AI chat widget
   composables/useAuth.ts  session state (JWT cookie resolved via /api/auth/me)
   middleware/auth.global  route guard: session check + role meta
@@ -39,9 +39,9 @@ tests/                    Vitest integration tests (RBAC + review cycle)
 
 ### Domain model
 
-- **users** — `MEMBER` or `MANAGER`
-- **projects** / **project_members** — work categories and assignments
-- **reports** — one per user per week; status flows `DRAFT → SUBMITTED → NEEDS_CORRECTION → APPROVED`
+- **users** — `MEMBER` or `MANAGER`; self-registrations start `PENDING` until a manager approves them; `token_version` revokes outstanding sessions when a role/status/password changes
+- **projects** — work categories a report can be filed under (optional)
+- **reports** — one per user per week, optionally assigned to a manager who reviews it; status flows `DRAFT → SUBMITTED → NEEDS_CORRECTION → APPROVED`
 - **report_versions** — full content snapshot per version. Draft edits update the unsubmitted version in place; **every submit freezes the version**, so each correction cycle builds visible history
 - **review_comments** — manager comments tied to the exact version they were made against (supports Approve notes and Request Changes)
 
@@ -88,7 +88,7 @@ CREATE DATABASE weekly_reports OWNER weekly_app;
 
 ```bash
 bun run db:migrate   # apply SQL migrations from drizzle/
-ALLOW_DEMO_SEED=1 bun run db:seed   # demo data: 1 manager + 5 members + 6 weeks of reports in mixed statuses
+ALLOW_DEMO_SEED=1 bun run db:seed:demo   # demo data: 3 managers + 10 members + ~a year of weekly reports in mixed statuses
                                     # (guard prevents accidentally wiping a real database)
 ```
 
@@ -116,20 +116,35 @@ bun run build
 bun run preview
 ```
 
-## Demo accounts (after seeding)
+## Demo accounts
+
+These exist only after the demo seed (`ALLOW_DEMO_SEED=1 bun run db:seed:demo`) — the login page shows no credentials; they live here.
 
 | Role | Email | Password |
 |---|---|---|
-| Manager | `manager@demo.io` (also `manager2@demo.io`) | `password123` |
-| Member | `alice@demo.io` (also bob, chatura, dilini, ethan @demo.io) | `password123` |
+| Manager | `manager@demo.io` (also `manager2@`, `manager3@demo.io`) | `password123` |
+| Member | `alice@demo.io` (also bob, chatura, dilini, ethan, fiona, gihan, hansika, isuru, nadun `@demo.io`) | `password123` |
+| Pending signup | `oshadi@demo.io`, `peter@demo.io` | `password123` — in the approval queue until a manager approves them |
+
+The seed builds ~a year of weekly reports per member (3 managers, 10 members, 6 projects) across every workflow status: approvals, one- and two-round correction cycles, awaiting-review queues, drafts, late submissions and leave gaps.
+
+### Production login
+
+`bun run db:seed:prod` creates the production manager account — independent of the demo seed, never wipes data, safe to re-run.
+
+| Role | Email | Password |
+|---|---|---|
+| Manager | `manager@weekin.com` | `3YosakHLZHaDixb4!Aa1` |
 
 The seed generates six weeks of reports per member across every workflow status, including full correction cycles (v1 → manager comment → v2 → approved), late submissions, drafts, and not-started weeks, so the dashboard is meaningful immediately. Members alternate between the two managers to demo the assigned-manager flow.
 
 ## Feature tour
 
-**Team member**: register → My Reports → New report (task table with priority/planned-vs-actual %/time/deliverable, next-week plan, blockers and achievements with a "key" flag, hours by type, notes, assigned manager) → Save draft → Submit for review. When a report comes back, the manager's comment appears on the report; edit and resubmit — every submitted version stays in the history.
+**Team member**: register → My Reports → New report (task table with priority/planned-vs-actual %/time/deliverable, next-week plan, blockers and achievements with a "key" flag, hours by type, notes, assigned manager) → Save draft → Submit for review. When a report comes back, the manager's comment appears on the report; edit and resubmit — every submitted version stays in the history. Account settings (name, password change) live in the account menu.
 
-**Manager**: Dashboard (weekly compliance, open blockers, needs-correction count, task trend, status by member, hours by project and task type, activity feed) → Review queue (reports assigned to you sort first) → open a submitted report → Approve, or Request changes with a comment tied to the version under review → the member can view past versions side by side with the current one. Any manager can review any report; the assigned one is flagged. Also: Team week view (all members' key blockers/achievements side by side), Members (roles, invites, removal), Projects (CRUD), and the AI assistant chat.
+**Manager**: Dashboard (weekly compliance, open blockers, needs-correction count, task trend, status by member, hours by project and task type, activity feed) → Review queue (reports assigned to you sort first) → open a submitted report → Approve, or Request changes with a comment tied to the version under review → the member can view past versions side by side with the current one. Any manager can review any report; the assigned one is flagged. Also: Team week view (all members' key blockers/achievements side by side), Members (roles, invites, removal, manager badge), Projects (CRUD), and the AI assistant chat.
+
+Filters (search/status/role/week/page) on the members, reports, review and team pages live in the URL query, so navigating back from a report or profile restores the exact filtered view; the dashboard's review queue and activity feed respect the selected week. Every page sets its own tab title.
 
 ## AI assistant
 
@@ -146,12 +161,12 @@ All routes under `/api`, JSON, cookie-authenticated. List endpoints support pagi
 
 | Area | Endpoints |
 |---|---|
-| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
-| Reports | `GET/POST /reports`, `GET/PUT/DELETE /reports/:id`, `POST /reports/:id/submit`, `POST /reports/:id/approve` 🛡, `POST /reports/:id/request-changes` 🛡, `GET /reports/:id/versions` |
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `PUT /auth/profile`, `PUT /auth/password` |
+| Reports | `GET/POST /reports`, `GET/PUT /reports/:id`, `POST /reports/:id/submit`, `POST /reports/:id/approve` 🛡, `POST /reports/:id/request-changes` 🛡, `GET /reports/:id/versions` |
 | Dashboard | `GET /dashboard` 🛡 |
 | Team | `GET /team/week` 🛡, `GET /team/:id` 🛡 |
 | Projects | `GET /projects`, `POST /projects` 🛡, `PUT/DELETE /projects/:id` 🛡 |
-| Users | `GET/POST /users` 🛡, `PUT/DELETE /users/:id` 🛡 (`PUT {status:'ACTIVE'}` approves a signup) |
+| Users | `GET /users/managers`, `GET/POST /users` 🛡, `PUT/DELETE /users/:id` 🛡 (`PUT {status:'ACTIVE'}` approves a signup) |
 | AI | `POST /ai/chat` 🛡 |
 
 🛡 manager-only. Every report route re-checks ownership: members can never read or write another member's report (404, no existence leak), managers can review but never rewrite report content.

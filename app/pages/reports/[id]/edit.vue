@@ -40,7 +40,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
+  <div class="mx-auto w-full max-w-4xl">
     <!-- Briefing band -->
     <section class="flex flex-wrap items-start justify-between gap-6 pt-4 max-sm:flex-nowrap max-sm:gap-x-4">
       <div class="min-w-0 flex-1">
@@ -80,7 +80,7 @@ onMounted(async () => {
     </p>
 
     <div v-else-if="initial" class="rise mt-6 rounded-[6px] border border-ink-subtle bg-white p-6" style="animation-delay: 0.3s">
-      <ReportForm :key="initial.reportId" :initial="initial" @saved="(id) => router.push(`/reports/${id}`)" />
+      <ReportForm :key="initial.reportId" :initial="initial" @saved="(id) => router.replace(`/reports/${id}`)" />
     </div>
   </div>
 </template>

@@ -104,9 +104,9 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-1 flex-col">
     <!-- Briefing band -->
-    <section class="pt-4">
+    <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
           <h1
@@ -152,7 +152,7 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
       <!-- Filters: search · status -->
       <div
         v-if="rows.length"
-        class="rise mt-5 flex flex-wrap items-center gap-x-3 gap-y-3"
+        class="rise flex flex-wrap items-center gap-x-3 gap-y-3"
         style="animation-delay: 0.3s"
       >
         <input
@@ -252,44 +252,25 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
         </NuxtLink>
 
         <!-- Filters matched nothing -->
-        <div
+        <EmptyState
           v-if="filtered.length === 0"
-          class="flex flex-col items-center gap-3 border-b border-ink-subtle py-10 text-center"
+          :fill="false"
+          class="border-b border-ink-subtle"
+          title="No one matches"
         >
-          <span
-            class="flex size-12 items-center justify-center rounded-full bg-ink-tint font-mono text-lg text-ink-muted"
-            aria-hidden="true"
-          >
-            ✓
-          </span>
-          <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
-            No one matches
-          </p>
-          <p class="max-w-[400px] text-[14px] leading-[1.5] text-ink-soft">
-            Try a different search or check another status tab.
-          </p>
-        </div>
+          Try a different search or check another status tab.
+        </EmptyState>
       </section>
 
       <!-- Empty state -->
-      <section
+      <EmptyState
         v-else
-        class="rise flex min-h-[55vh] flex-col items-center justify-center gap-3 border-t border-ink-subtle text-center"
+        class="rise border-t border-ink-subtle"
         style="animation-delay: 0.2s"
+        title="Nothing to review"
       >
-        <span
-          class="flex size-12 items-center justify-center rounded-full bg-ink-tint font-mono text-lg text-ink-muted"
-          aria-hidden="true"
-        >
-          ✓
-        </span>
-        <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
-          Nothing to review
-        </p>
-        <p class="max-w-[400px] text-[14px] leading-[1.5] text-ink-soft">
-          Submitted reports will land here the moment a team member sends one.
-        </p>
-      </section>
+        Submitted reports will land here the moment a team member sends one.
+      </EmptyState>
     </template>
   </div>
 </template>

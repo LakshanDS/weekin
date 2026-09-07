@@ -1,5 +1,5 @@
 // Integration test for the self-registration approval flow.
-// Requires the dev server running with a seeded database (bun run dev && bun run db:seed):
+// Requires the dev server running with a seeded database (bun run dev && bun run db:seed:demo):
 //   bun run test
 import { describe, expect, it } from 'vitest'
 
