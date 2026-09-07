@@ -2,6 +2,7 @@
 // Shown to self-registered users until a manager approves the account.
 // Polls the session; flips to the workspace the moment approval lands.
 definePageMeta({ layout: false })
+useHead({ title: 'Pending approval' })
 
 const { user, fetchMe, logout } = useAuth()
 

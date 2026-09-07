@@ -2,6 +2,7 @@
 import { addDaysIso, isoWeekOf, mondayOf } from '#shared/utils/week'
 
 definePageMeta({ role: 'MANAGER' })
+useHead({ title: 'Dashboard' })
 
 const { user } = useAuth()
 
@@ -46,7 +47,7 @@ async function load() {
   try {
     const [dashboard, reviewQueue] = await Promise.all([
       $fetch<DashboardData>(`/api/dashboard?week=${week.value}`),
-      $fetch<{ reports: QueueRow[] }>('/api/reports?status=SUBMITTED&pageSize=5'),
+      $fetch<{ reports: QueueRow[] }>(`/api/reports?status=SUBMITTED&pageSize=5&from=${week.value}&to=${week.value}`),
     ])
     data.value = dashboard
     queue.value = reviewQueue.reports
@@ -178,11 +179,11 @@ const projectRows = computed(() =>
           >
             {{ greeting }}, {{ firstName }}<span class="text-coral">.</span>
           </h1>
-          <p v-if="data" class="rise mt-2 text-[13px] leading-[1.45] text-ink-soft sm:hidden" style="animation-delay: 0.22s">
+          <p v-if="data" class="rise mt-2 min-h-[2.9em] text-[13px] leading-[1.45] text-ink-soft sm:hidden" style="animation-delay: 0.22s">
             <b class="font-semibold text-ink">{{ data.summary.totalSubmitted + data.summary.approved + data.summary.needsCorrection }} of {{ data.summary.compliance.totalMembers }}</b>
             reports in<template v-if="data.summary.needsCorrection"> · <b class="font-semibold text-correction">{{ data.summary.needsCorrection }}</b> to fix</template><template v-if="data.summary.openBlockers"> · {{ data.summary.openBlockers }} blocker{{ data.summary.openBlockers > 1 ? 's' : '' }} open</template>
           </p>
-          <p class="rise mt-3 hidden max-w-[560px] text-[18px] leading-[1.55] text-ink-soft sm:block" style="animation-delay: 0.22s">
+          <p class="rise mt-3 hidden min-h-[3.1em] max-w-[560px] text-[18px] leading-[1.55] text-ink-soft sm:block" style="animation-delay: 0.22s">
             <template v-if="data">
               <b class="font-semibold text-ink">{{ data.summary.totalSubmitted + data.summary.approved + data.summary.needsCorrection }} of {{ data.summary.compliance.totalMembers }}</b>
               reports are in for this week.

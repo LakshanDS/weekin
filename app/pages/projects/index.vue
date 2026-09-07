@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ role: 'MANAGER' })
+useHead({ title: 'Projects' })
 
 interface Project {
   id: number

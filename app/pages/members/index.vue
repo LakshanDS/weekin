@@ -1,5 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ role: 'MANAGER' })
+useHead({ title: 'Members' })
 
 const { user: me } = useAuth()
 const { confirm } = useConfirm()
@@ -99,8 +100,19 @@ async function cancelSignup(user: UserRow) {
 }
 
 // --- roster filters: search + role tabs (pending signups live in their own queue) ---
-const search = ref('')
-const role = ref<'' | 'MEMBER' | 'MANAGER'>('')
+// Filters live in the URL so going back from a member profile restores them.
+const route = useRoute()
+const router = useRouter()
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const role = ref<'' | 'MEMBER' | 'MANAGER'>((route.query.role as 'MEMBER' | 'MANAGER') || '')
+
+function syncQuery() {
+  const params: Record<string, string> = {}
+  if (search.value.trim()) params.q = search.value.trim()
+  if (role.value) params.role = role.value
+  router.replace({ query: params })
+}
+watch([search, role], syncQuery)
 
 const ROLE_OPTIONS: { value: '' | 'MEMBER' | 'MANAGER'; label: string }[] = [
   { value: '', label: 'All' },
@@ -319,7 +331,8 @@ function resetFilters() {
           >
             <span class="flex min-w-0 items-center gap-3">
               <span
-                class="flex size-8 shrink-0 items-center justify-center rounded-full bg-ink-tint font-mono text-[10.5px] text-ink-soft"
+                class="flex size-8 shrink-0 items-center justify-center rounded-full font-mono text-[10.5px]"
+                :class="user.role === 'MANAGER' ? 'bg-approved-tint text-approved' : 'bg-ink-tint text-ink-soft'"
                 aria-hidden="true"
               >
                 {{ initials(user.name) }}
@@ -334,6 +347,12 @@ function resetFilters() {
                     {{ user.name }}
                   </NuxtLink>
                   <b v-else class="truncate text-sm font-semibold">{{ user.name }}</b>
+                  <span
+                    v-if="user.role === 'MANAGER'"
+                    class="shrink-0 rounded-full bg-approved-tint px-2 py-0.5 font-mono text-[9.5px] tracking-[0.12em] uppercase text-approved"
+                  >
+                    Manager
+                  </span>
                   <span
                     v-if="user.id === me?.id"
                     class="shrink-0 rounded-full bg-coral-tint px-2 py-0.5 font-mono text-[9.5px] tracking-[0.12em] uppercase text-coral-dark"

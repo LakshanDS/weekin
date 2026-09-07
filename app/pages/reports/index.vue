@@ -4,6 +4,7 @@ import type { ReportStatus } from '#shared/types/report'
 
 const { user } = useAuth()
 const isManager = computed(() => user.value?.role === 'MANAGER')
+useHead({ title: 'Reports' })
 
 interface ReportRow {
   id: number
@@ -16,12 +17,18 @@ interface ReportRow {
   submittedAt: string | null
 }
 
-const page = ref(1)
-const statusFilter = ref<'' | ReportStatus>('')
-const search = ref('')
+// Filters + page live in the URL query, so going back from a report restores
+// the exact filtered view instead of the full list.
+const route = useRoute()
+const router = useRouter()
+const fromParam = typeof route.query.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(route.query.from) ? route.query.from : ''
+
+const page = ref(Math.max(1, Number(route.query.page) || 1))
+const statusFilter = ref<'' | ReportStatus>((route.query.status as '' | ReportStatus) || '')
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
 // Explicit member / project pickers (manager only); the API takes userId / projectId.
-const memberFilter = ref<number | ''>('')
-const projectFilter = ref<number | ''>('')
+const memberFilter = ref<number | ''>(Number(route.query.userId) || '')
+const projectFilter = ref<number | ''>(Number(route.query.projectId) || '')
 const memberOptions = ref<{ id: number; name: string }[]>([])
 const projectOptions = ref<{ id: number; name: string }[]>([])
 
@@ -36,8 +43,8 @@ const projectSelectOptions = computed(() => [
 ])
 const _today = new Date()
 const currentWeek = mondayOf(`${_today.getFullYear()}-${String(_today.getMonth() + 1).padStart(2, '0')}-${String(_today.getDate()).padStart(2, '0')}`)
-const week = ref(currentWeek)
-const weekActive = ref(false)
+const week = ref(fromParam || currentWeek)
+const weekActive = ref(!!fromParam)
 const reports = ref<ReportRow[]>([])
 const total = ref(0)
 // Grand total across all reports; fetched once, unaffected by filters.
@@ -62,8 +69,25 @@ const filterLabel = computed(() => {
   return STATUS_OPTIONS.find((o) => o.value === statusFilter.value)?.label.toLowerCase() ?? 'weekly'
 })
 
+// Mirror the active filters/page into the URL (replace: no history spam).
+function syncQuery() {
+  const params: Record<string, string> = {}
+  if (statusFilter.value) params.status = statusFilter.value
+  if (memberFilter.value) params.userId = String(memberFilter.value)
+  if (projectFilter.value) params.projectId = String(projectFilter.value)
+  if (weekActive.value) {
+    params.from = week.value
+    params.to = week.value
+  }
+  const q = search.value.trim()
+  if (q) params.q = q
+  if (page.value > 1) params.page = String(page.value)
+  router.replace({ query: params })
+}
+
 async function load() {
   if (!loaded.value) loading.value = true
+  else syncQuery()
   try {
     const query = new URLSearchParams({ page: String(page.value), pageSize: '20' })
     if (statusFilter.value) query.set('status', statusFilter.value)

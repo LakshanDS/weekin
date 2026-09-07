@@ -3,6 +3,7 @@ import { loginSchema } from '#shared/schemas/auth'
 import { z } from 'zod'
 
 definePageMeta({ public: true, layout: false })
+useHead({ title: 'Log in' })
 
 const { user, login } = useAuth()
 const route = useRoute()

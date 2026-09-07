@@ -35,8 +35,9 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      titleTemplate: (title) => (title ? `${title} · WeekIn` : 'WeekIn'),
       link: [
+        { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {

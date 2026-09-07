@@ -3,6 +3,7 @@ import { registerSchema } from '#shared/schemas/auth'
 import { z } from 'zod'
 
 definePageMeta({ public: true, layout: false })
+useHead({ title: 'Register' })
 
 const { register } = useAuth()
 
@@ -77,7 +78,7 @@ const FACTS = [
 
     <div class="mx-auto grid w-full max-w-[1200px] flex-1 grid-cols-1 items-center px-8 py-12 lg:grid-cols-[1fr_1px_1fr]">
       <!-- Instructions -->
-      <section class="min-w-0 pb-2 lg:pr-16">
+      <section class="min-w-0 pt-8 pb-2 lg:pt-0 lg:pr-16">
         <p class="rise font-mono text-[11px] tracking-[0.15em] uppercase text-ink-muted">
           How WeekIn works
         </p>
@@ -122,7 +123,7 @@ const FACTS = [
       <div aria-hidden="true" class="hidden h-[min(440px,58vh)] w-px justify-self-center bg-ink-subtle lg:block" />
 
       <!-- Form -->
-      <section class="w-full min-w-0 border-t border-ink-subtle pt-8 pb-2 lg:mx-auto lg:max-w-[400px] lg:border-t-0 lg:pt-0">
+      <section class="order-first w-full min-w-0 border-b border-ink-subtle pt-2 pb-8 lg:order-none lg:mx-auto lg:max-w-[400px] lg:border-b-0 lg:pt-0 lg:pb-2">
         <p class="rise font-mono text-[11px] tracking-[0.15em] uppercase text-ink-muted" style="animation-delay: 0.15s">
           Get started
         </p>

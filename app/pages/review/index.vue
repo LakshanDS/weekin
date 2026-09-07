@@ -2,6 +2,7 @@
 import { isoWeekOf } from '#shared/utils/week'
 
 definePageMeta({ role: 'MANAGER' })
+useHead({ title: 'Review' })
 
 const { user } = useAuth()
 
@@ -23,9 +24,22 @@ const loading = ref(true)
 
 const isMine = (row: QueueRow) => row.assignedManagerId != null && row.assignedManagerId === user.value?.id
 
-const search = ref('')
+// Filters live in the URL so going back from a report restores the filtered queue.
+const route = useRoute()
+const router = useRouter()
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
 // '' = whole queue, then first-time vs re-submitted.
-const statusFilter = ref<'' | 'SUBMITTED' | 'RESUBMITTED'>('')
+const statusFilter = ref<'' | 'SUBMITTED' | 'RESUBMITTED'>(
+  (route.query.status as 'SUBMITTED' | 'RESUBMITTED') || '',
+)
+
+function syncQuery() {
+  const params: Record<string, string> = {}
+  if (search.value.trim()) params.q = search.value.trim()
+  if (statusFilter.value) params.status = statusFilter.value
+  router.replace({ query: params })
+}
+watch([search, statusFilter], syncQuery)
 
 const STATUS_OPTIONS: { value: '' | 'SUBMITTED' | 'RESUBMITTED'; label: string }[] = [
   { value: '', label: 'All' },
@@ -189,7 +203,7 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
           v-for="report in filtered"
           :key="report.id"
           :to="`/reports/${report.id}`"
-          class="group grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[1fr_1.1fr_0.9fr_110px_105px_75px] sm:gap-x-4"
+          class="group grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint lg:grid-cols-[minmax(0,1.6fr)_110px_minmax(0,1fr)_110px_105px_75px] lg:gap-x-4"
         >
           <span class="flex min-w-0 items-center gap-3">
             <span
@@ -208,7 +222,7 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
                   assigned to you
                 </span>
               </span>
-              <span class="block truncate font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted sm:hidden">{{ report.projectName ?? '—' }}</span>
+              <span class="block truncate font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted lg:hidden">{{ report.projectName ?? '—' }}</span>
             </span>
             <span
               v-if="!isMine(report) && report.assignedManagerName"
@@ -225,11 +239,11 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
             <span class="block truncate text-[12.5px] text-ink-muted">{{ formatWeekRange(report.weekStart, report.weekEnd) }}</span>
           </span>
 
-          <span class="hidden truncate text-[13px] text-ink-soft sm:block">{{ report.projectName ?? '—' }}</span>
-          <span class="hidden whitespace-nowrap font-mono text-xs text-ink-muted sm:block">
+          <span class="hidden truncate text-[13px] text-ink-soft lg:block">{{ report.projectName ?? '—' }}</span>
+          <span class="hidden whitespace-nowrap font-mono text-xs text-ink-muted lg:block">
             {{ report.submittedAt ? formatDateTime(report.submittedAt) : '—' }}
           </span>
-          <span class="hidden whitespace-nowrap font-mono text-xs sm:block" :class="waitingTone(report)">
+          <span class="hidden whitespace-nowrap font-mono text-xs lg:block" :class="waitingTone(report)">
             waiting {{ waitingShort(report) }}
           </span>
           <span class="border-b border-coral pb-0.5 text-[12.5px] font-medium text-coral transition-colors group-hover:text-coral-dark">

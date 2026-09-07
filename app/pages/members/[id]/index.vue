@@ -28,6 +28,7 @@ interface Profile {
 }
 
 const profile = ref<Profile | null>(null)
+useHead({ title: () => profile.value?.member.name ?? 'Member' })
 const error = ref('')
 
 onMounted(async () => {
@@ -45,31 +46,31 @@ onMounted(async () => {
 
     <template v-else-if="profile">
       <NuxtLink to="/members" class="font-mono text-[11px] tracking-widest text-ink-500 uppercase hover:text-body">← All members</NuxtLink>
-      <h1 class="mt-2 font-display text-3xl font-bold tracking-tight">{{ profile.member.name }}</h1>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight">{{ profile.member.name }}</h1>
       <p class="mt-1 text-ink-500">{{ profile.member.email }} · joined {{ new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(profile.member.createdAt)) }}</p>
 
       <!-- Stats -->
       <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="border border-line bg-white p-4">
           <p class="font-mono text-[11px] tracking-widest text-ink-500 uppercase">Reports</p>
-          <p class="mt-1.5 font-display text-3xl font-bold">{{ profile.stats.totalReports }}</p>
+          <p class="mt-1.5 text-3xl font-bold">{{ profile.stats.totalReports }}</p>
           <p class="text-xs text-ink-500">{{ profile.stats.approved }} approved · {{ profile.stats.needsCorrection }} back · {{ profile.stats.pending }} pending</p>
         </div>
         <div class="border border-line bg-white p-4">
           <p class="font-mono text-[11px] tracking-widest text-ink-500 uppercase">On-time rate</p>
-          <p class="mt-1.5 font-display text-3xl font-bold">
+          <p class="mt-1.5 text-3xl font-bold">
             {{ profile.stats.totalReports ? Math.round((profile.stats.onTime / profile.stats.totalReports) * 100) : 0 }}%
           </p>
           <p class="text-xs text-ink-500">{{ profile.stats.onTime }} of {{ profile.stats.totalReports }} submitted by Friday</p>
         </div>
         <div class="border border-line bg-white p-4">
           <p class="font-mono text-[11px] tracking-widest text-ink-500 uppercase">Tasks done</p>
-          <p class="mt-1.5 font-display text-3xl font-bold">{{ profile.stats.tasksDone }}</p>
+          <p class="mt-1.5 text-3xl font-bold">{{ profile.stats.tasksDone }}</p>
           <p class="text-xs text-ink-500">across submitted reports</p>
         </div>
         <div class="border border-line bg-white p-4">
           <p class="font-mono text-[11px] tracking-widest text-ink-500 uppercase">Hours logged</p>
-          <p class="mt-1.5 font-display text-3xl font-bold">{{ profile.stats.hoursLogged }}</p>
+          <p class="mt-1.5 text-3xl font-bold">{{ profile.stats.hoursLogged }}</p>
           <p class="text-xs text-ink-500">total, by task type</p>
         </div>
       </div>
@@ -89,7 +90,12 @@ onMounted(async () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="report in profile.history" :key="report.id" class="border-b border-line/60 last:border-0 hover:bg-paper">
+            <tr
+              v-for="report in profile.history"
+              :key="report.id"
+              class="cursor-pointer border-b border-line/60 transition-colors last:border-0 hover:bg-paper"
+              @click="navigateTo(`/reports/${report.id}`)"
+            >
               <td class="px-4 py-3 tabular-nums">{{ formatWeekRange(report.weekStart, report.weekEnd) }}</td>
               <td class="px-4 py-3 text-ink-500">{{ report.projectName ?? '—' }}</td>
               <td class="px-4 py-3"><StatusTag :status="report.status" /></td>
