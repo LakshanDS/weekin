@@ -8,6 +8,7 @@ interface Project {
   description: string | null
   createdAt: string
   reportCount: number
+  memberCount: number
 }
 
 const projects = ref<Project[]>([])
@@ -198,15 +199,25 @@ const newestCreated = computed(() => {
           <div
             v-for="project in filtered"
             :key="project.id"
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_110px_110px_auto]"
+            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_105px_105px_110px_auto]"
           >
             <span class="min-w-0">
-              <b class="block truncate text-sm font-semibold">{{ project.name }}</b>
+              <NuxtLink
+                :to="`/projects/${project.id}`"
+                class="block truncate text-sm font-semibold hover:text-coral"
+                :title="`Manage members of ${project.name}`"
+              >
+                {{ project.name }}
+              </NuxtLink>
               <span class="block truncate text-[12px] text-ink-muted">{{ project.description ?? 'No description' }}</span>
             </span>
 
             <span class="hidden text-[13px] text-ink-soft sm:block" title="Reports attached to this project">
               {{ project.reportCount }} report{{ project.reportCount === 1 ? '' : 's' }}
+            </span>
+
+            <span class="hidden text-[13px] text-ink-soft sm:block" title="Members assigned to this project">
+              {{ project.memberCount }} member{{ project.memberCount === 1 ? '' : 's' }}
             </span>
 
             <span class="hidden font-mono text-xs whitespace-nowrap text-ink-muted sm:block">

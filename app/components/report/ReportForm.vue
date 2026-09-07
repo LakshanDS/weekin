@@ -10,6 +10,7 @@ const props = defineProps<{
   initial?: {
     reportId: number
     projectId: number | null
+    projectName?: string | null
     assignedManagerId: number | null
     weekStart: string
     weekEnd: string
@@ -122,11 +123,17 @@ async function save(submitAfter: boolean) {
 }
 
 onMounted(async () => {
+  // Members only get their assigned projects; the edit flow may still point at
+  // a project the assignment was removed from — keep it selectable.
   const [projectRes, managerRes] = await Promise.all([
-    $fetch<{ projects: { id: number; name: string }[] }>('/api/projects'),
+    $fetch<{ projects: { id: number; name: string }[] }>('/api/projects?mine=1'),
     $fetch<{ managers: { id: number; name: string }[] }>('/api/users/managers'),
   ])
-  projects.value = projectRes.projects
+  const list = [...projectRes.projects]
+  if (week.projectId && !list.some((p) => p.id === week.projectId)) {
+    list.push({ id: week.projectId, name: week.projectName ?? 'Current project' })
+  }
+  projects.value = list
   managers.value = managerRes.managers
 })
 

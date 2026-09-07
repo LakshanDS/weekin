@@ -10,7 +10,7 @@ const initial = ref<Awaited<ReturnType<typeof load>> | null>(null)
 const missing = ref(false)
 
 interface Detail {
-  report: { projectId: number | null; assignedManagerId: number | null; weekStart: string; weekEnd: string; status: string }
+  report: { projectId: number | null; projectName: string | null; assignedManagerId: number | null; weekStart: string; weekEnd: string; status: string }
   content: { tasks: never[]; nextWeekTasks: string[]; blockers: never[]; achievements: never[]; hoursByType: object; notes: string | null } | null
 }
 
@@ -23,6 +23,7 @@ async function load() {
   return {
     reportId,
     projectId: res.report.projectId,
+    projectName: res.report.projectName,
     assignedManagerId: res.report.assignedManagerId,
     weekStart: res.report.weekStart,
     weekEnd: res.report.weekEnd,
