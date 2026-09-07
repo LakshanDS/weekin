@@ -1,12 +1,19 @@
 // Integration test for the review cycle and role-based access control.
 // Requires the dev server running with a seeded database (bun run dev && bun run db:seed:demo):
 //   bun run test
-// Reports cannot be deleted via the API, so re-seed before each run to reset
-// the fixed test week.
-import { describe, expect, it } from 'vitest'
+// The fixed test weeks are cleared of leftover reports directly in the DB (the API
+// has no report delete; versions and comments cascade), so re-runs don't hit 409.
+import { beforeAll, describe, expect, it } from 'vitest'
+import postgres from 'postgres'
 
 const BASE = process.env.TEST_BASE_URL ?? 'http://localhost:3000/api'
 const PASS = 'password123'
+
+async function clearWeek(weekStart: string) {
+  const sql = postgres(process.env.NUXT_DATABASE_URL!, { max: 1 })
+  await sql`DELETE FROM reports WHERE week_start = ${weekStart}`
+  await sql.end()
+}
 
 interface Jar {
   cookie?: string
@@ -65,6 +72,8 @@ describe('report review cycle & RBAC', () => {
   let manager: Jar
   let managerId: number
   let reportId: number
+
+  beforeAll(() => clearWeek(week.weekStart))
 
   it('logs in all three test accounts', async () => {
     alice = await login('alice@demo.io')
@@ -179,6 +188,8 @@ describe('project membership gates report projects', () => {
   const PASS = 'password123'
   // Another future week, distinct from the review-cycle one above.
   const week = { weekStart: '2026-09-21', weekEnd: '2026-09-25' }
+
+  beforeAll(() => clearWeek(week.weekStart))
 
   it('rejects an unassigned project with 403 and accepts an assigned one', async () => {
     const { status, setCookie } = await call('POST', '/auth/login', {}, { email: 'alice@demo.io', password: PASS })
