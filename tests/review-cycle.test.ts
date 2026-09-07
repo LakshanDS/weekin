@@ -1,6 +1,8 @@
 // Integration test for the review cycle and role-based access control.
-// Requires the dev server running with a seeded database (bun run dev && bun run db:seed):
+// Requires the dev server running with a seeded database (bun run dev && bun run db:seed:demo):
 //   bun run test
+// Reports cannot be deleted via the API, so re-seed before each run to reset
+// the fixed test week.
 import { describe, expect, it } from 'vitest'
 
 const BASE = process.env.TEST_BASE_URL ?? 'http://localhost:3000/api'
@@ -74,13 +76,6 @@ describe('report review cycle & RBAC', () => {
   })
 
   it('creates a draft and rejects a duplicate week', async () => {
-    // keep reruns idempotent: drop leftovers first (managers may remove any report)
-    const list = await call('GET', `/reports?from=${week.weekStart}&to=${week.weekStart}`, alice)
-    for (const stale of list.json.reports) {
-      const del = await call('DELETE', `/reports/${stale.id}`, alice)
-      if (del.status !== 200) await call('DELETE', `/reports/${stale.id}`, manager)
-    }
-
     const projects = await call('GET', '/projects', alice)
     // An assigned manager is required at creation
     const noManager = await call('POST', '/reports', alice, {
@@ -170,9 +165,6 @@ describe('report review cycle & RBAC', () => {
     const actions = detail.json.comments.map((c: any) => [c.action, c.versionNo])
     expect(actions).toContainEqual(['REQUEST_CHANGES', 1])
     expect(actions).toContainEqual(['APPROVE', 2])
-
-    // leave no trace: managers can remove even approved reports (moderation delete)
-    expect((await call('DELETE', `/reports/${reportId}`, manager)).status).toBe(200)
   })
 
   it('exposes manager-only endpoints to managers only', async () => {

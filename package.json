@@ -10,7 +10,8 @@
     "postinstall": "nuxt prepare",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "bun server/database/seed.ts",
+    "db:seed:demo": "bun server/database/seed.demo.ts",
+    "db:seed:prod": "bun server/database/seed.prod.ts",
     "test": "vitest run",
     "build:cf": "NITRO_PRESET=cloudflare_module nuxt build",
     "dev:cf": "bun scripts/sync-dev-vars.mjs && bunx wrangler dev --port 8787"
