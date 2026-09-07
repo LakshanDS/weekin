@@ -5,6 +5,7 @@ const route = useRoute()
 const router = useRouter()
 
 const reportId = Number(route.params.id)
+useHead({ title: 'Edit report' })
 const initial = ref<Awaited<ReturnType<typeof load>> | null>(null)
 const missing = ref(false)
 

@@ -7,6 +7,8 @@ if (user.value?.role === 'MANAGER') navigateTo('/reports', { replace: true })
 
 const router = useRouter()
 const week = currentWeekRange()
+
+useHead({ title: 'New report' })
 </script>
 
 <template>

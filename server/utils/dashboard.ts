@@ -130,6 +130,12 @@ export async function getDashboardData(selectedWeekStart: string, event: H3Event
     })
     .from(reviewComments)
     .innerJoin(users, eq(users.id, reviewComments.managerId))
+    .where(
+      and(
+        gte(reviewComments.createdAt, new Date(`${windowStart}T00:00:00Z`)),
+        lte(reviewComments.createdAt, new Date(`${addDaysIso(selectedWeekStart, 6)}T23:59:59Z`)),
+      ),
+    )
     .orderBy(desc(reviewComments.createdAt))
     .limit(8)
   const activity = [

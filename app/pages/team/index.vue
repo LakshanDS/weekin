@@ -3,6 +3,7 @@ import { addDaysIso, isoWeekOf, mondayOf } from '#shared/utils/week'
 import type { ReportStatus } from '#shared/types/report'
 
 definePageMeta({ role: 'MANAGER' })
+useHead({ title: 'Team' })
 
 interface MemberRow {
   userId: number
@@ -21,14 +22,29 @@ const _today = new Date()
 const todayIso = `${_today.getFullYear()}-${String(_today.getMonth() + 1).padStart(2, '0')}-${String(_today.getDate()).padStart(2, '0')}`
 const currentWeek = mondayOf(todayIso)
 
-const week = ref(currentWeek)
+// Filters live in the URL so going back from a report/profile restores them.
+const route = useRoute()
+const router = useRouter()
+const weekParam = typeof route.query.week === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(route.query.week) ? route.query.week : ''
+
+const week = ref(weekParam || currentWeek)
 const rows = ref<MemberRow[]>([])
 // Only the first load shows the loading state; later refreshes update in place.
 const loading = ref(true)
 const loaded = ref(false)
 
-const search = ref('')
-const status = ref<'' | ReportStatus | 'NOT_STARTED'>('')
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const status = ref<'' | ReportStatus | 'NOT_STARTED'>(
+  (route.query.status as ReportStatus | 'NOT_STARTED') || '',
+)
+
+function syncQuery() {
+  const params: Record<string, string> = {}
+  if (search.value.trim()) params.q = search.value.trim()
+  if (week.value !== currentWeek) params.week = week.value
+  if (status.value) params.status = status.value
+  router.replace({ query: params })
+}
 
 const STATUS_OPTIONS: { value: '' | ReportStatus | 'NOT_STARTED'; label: string }[] = [
   { value: '', label: 'All' },
@@ -48,7 +64,8 @@ async function load() {
     loaded.value = true
   }
 }
-watch(week, load)
+watch(week, () => { load(); syncQuery() })
+watch([search, status], syncQuery)
 onMounted(load)
 
 const inCount = computed(() => rows.value.filter((r) => r.report).length)

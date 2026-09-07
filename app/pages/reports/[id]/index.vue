@@ -46,6 +46,7 @@ interface VersionFull extends ReportContentType {
 }
 
 const detail = ref<Detail | null>(null)
+useHead({ title: () => (detail.value?.report.userName ? `${detail.value.report.userName}'s report` : 'Report') })
 // Full content of every version the viewer may see, ascending.
 const versions = ref<VersionFull[]>([])
 const error = ref('')
