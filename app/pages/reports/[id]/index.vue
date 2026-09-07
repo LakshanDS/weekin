@@ -152,12 +152,12 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
+  <div class="flex flex-1 flex-col">
     <p v-if="error" class="rise mt-8 font-mono text-sm text-correction">{{ error }}</p>
 
     <template v-else-if="detail">
       <!-- Briefing band -->
-      <section class="pt-4">
+      <section class="pt-4 pb-5">
         <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
           <div class="min-w-0 flex-1">
             <NuxtLink
