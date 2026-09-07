@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs'
 import {
   users,
   projects,
+  projectMembers,
   reports,
   reportVersions,
   reviewComments,
@@ -24,7 +25,7 @@ import type {
 } from '../../shared/types/report'
 
 const database = drizzle(postgres(process.env.NUXT_DATABASE_URL!, { max: 1 }), {
-  schema: { users, projects, reports, reportVersions, reviewComments },
+  schema: { users, projects, projectMembers, reports, reportVersions, reviewComments },
 })
 
 const DEMO_PASSWORD = 'password123'
@@ -452,6 +453,23 @@ async function main() {
     .insert(projects)
     .values(PROJECTS.map((p) => ({ name: p.name, description: p.description })))
     .returning()
+
+  // Every member is assigned their primary project plus one more (chosen via
+  // the PRNG) — the report form only offers assigned projects, so members need
+  // at least two to pick from. The 30% chance of a random project per week
+  // below stays: past reports may predate the assignments. A separate PRNG
+  // keeps the report data stream identical to before memberships existed.
+  const memberRnd = mulberry32(20260907)
+  await database.insert(projectMembers).values(
+    members.flatMap((member, mi) => {
+      const primary = mi % projectRows.length
+      const other = Math.floor(memberRnd() * (projectRows.length - 1)) // 0..n-2, bumped past primary below
+      return [
+        { projectId: projectRows[primary]!.id, userId: member.id },
+        { projectId: projectRows[other < primary ? other : other + 1]!.id, userId: member.id },
+      ]
+    }),
+  )
 
   const reportRows: Omit<typeof reports.$inferInsert, 'id'>[] = []
   const versionDrafts: VersionDraft[] = []
