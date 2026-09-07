@@ -12,7 +12,7 @@ useHead({ title: 'New report' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
+  <div class="mx-auto w-full max-w-4xl">
     <!-- Briefing band -->
     <section class="flex flex-wrap items-start justify-between gap-6 pt-4 max-sm:flex-nowrap max-sm:gap-x-4">
       <div class="min-w-0 flex-1">
