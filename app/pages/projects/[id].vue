@@ -27,7 +27,7 @@ const loading = ref(true)
 const missing = ref(false)
 const error = ref('')
 
-const allUsers = ref<{ id: number; name: string; status: string }[]>([])
+const allUsers = ref<{ id: number; name: string; email: string; role: string; status: string }[]>([])
 
 async function load() {
   loading.value = true
@@ -35,7 +35,7 @@ async function load() {
   try {
     const [res, usersRes] = await Promise.all([
       $fetch<{ project: ProjectInfo; members: Member[] }>(`/api/projects/${projectId}/members`),
-      $fetch<{ users: { id: number; name: string; status: string }[] }>('/api/users'),
+      $fetch<{ users: { id: number; name: string; email: string; role: string; status: string }[] }>('/api/users'),
     ])
     project.value = res.project
     members.value = res.members
@@ -62,28 +62,46 @@ async function run(action: () => Promise<unknown>) {
   }
 }
 
-// ACTIVE users not yet assigned — the add-member dropdown
+// ACTIVE users not yet assigned — the assign-users modal
 const candidates = computed(() =>
   allUsers.value
     .filter((u) => u.status === 'ACTIVE' && !members.value.some((m) => m.id === u.id))
     .sort((a, b) => a.name.localeCompare(b.name)),
 )
-const candidateOptions = computed(() => candidates.value.map((u) => ({ value: u.id, label: u.name })))
-const selectedUserId = ref<number>()
 
-watch(candidates, (list) => {
-  if (!list.some((u) => u.id === selectedUserId.value)) selectedUserId.value = list[0]?.id
-}, { immediate: true })
+const showAssign = ref(false)
+const selectedIds = ref<number[]>([])
+const assigning = ref(false)
 
-const addMember = () =>
-  run(async () => {
-    if (!selectedUserId.value) return
-    await $fetch(`/api/projects/${projectId}/members`, {
-      method: 'POST',
-      body: { userId: selectedUserId.value },
-    })
-    await load()
-  })
+function openAssign() {
+  selectedIds.value = []
+  showAssign.value = true
+}
+
+function toggle(userId: number) {
+  selectedIds.value = selectedIds.value.includes(userId)
+    ? selectedIds.value.filter((id) => id !== userId)
+    : [...selectedIds.value, userId]
+}
+
+async function addSelected() {
+  if (!selectedIds.value.length) return
+  assigning.value = true
+  const results = await Promise.allSettled(
+    selectedIds.value.map((userId) =>
+      $fetch(`/api/projects/${projectId}/members`, { method: 'POST', body: { userId } }),
+    ),
+  )
+  assigning.value = false
+  showAssign.value = false
+  const failed = results.filter((r) => r.status === 'rejected').length
+  await load()
+  if (failed) {
+    error.value = failed === selectedIds.value.length
+      ? 'Could not add the selected members.'
+      : `${failed} of ${selectedIds.value.length} members could not be added.`
+  }
+}
 
 async function remove(member: Member) {
   const ok = await confirm({
@@ -97,7 +115,7 @@ async function remove(member: Member) {
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-4xl flex-1 flex-col">
+  <div class="flex flex-1 flex-col">
     <!-- Briefing band -->
     <section class="flex flex-wrap items-start justify-between gap-6 pt-4 max-sm:flex-nowrap max-sm:gap-x-4">
       <div class="min-w-0 flex-1">
@@ -151,31 +169,23 @@ async function remove(member: Member) {
           <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
             Assigned members
           </p>
-          <form class="flex items-center gap-2" @submit.prevent="addMember">
-            <AppSelect
-              v-model="selectedUserId"
-              class="w-44 sm:w-56"
-              :options="candidateOptions"
-              aria-label="Choose a member to assign"
-              :disabled="candidateOptions.length === 0"
-              :trigger-title="candidateOptions.length === 0 ? 'Everyone is already assigned' : 'Choose a member to assign'"
-              :trigger-id="`assign-member-${projectId}`"
-            />
-            <button
-              type="submit"
-              :disabled="candidateOptions.length === 0"
-              class="cursor-pointer rounded-[10px] bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Add member
-            </button>
-          </form>
+          <button
+            type="button"
+            :disabled="candidates.length === 0"
+            class="cursor-pointer rounded-[10px] bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a] disabled:cursor-not-allowed disabled:opacity-50"
+            :title="candidates.length === 0 ? 'Everyone is already assigned' : 'Assign members to this project'"
+            @click="openAssign"
+          >
+            Assign users
+          </button>
         </div>
 
         <div v-if="members.length" class="mt-2.5 border-y border-ink-subtle">
-          <div
+          <NuxtLink
             v-for="member in members"
             :key="member.id"
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-b border-ink-subtle px-3 py-3.5 transition-colors last:border-b-0 hover:bg-ink-tint"
+            :to="`/members/${member.id}`"
+            class="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-b border-ink-subtle px-3 py-3.5 transition-colors last:border-b-0 hover:bg-ink-tint"
           >
             <span class="flex min-w-0 items-center gap-3">
               <span
@@ -187,9 +197,7 @@ async function remove(member: Member) {
               </span>
               <span class="min-w-0 flex-1">
                 <span class="flex min-w-0 items-center gap-2">
-                  <NuxtLink :to="`/members/${member.id}`" class="truncate text-sm font-semibold hover:text-coral">
-                    {{ member.name }}
-                  </NuxtLink>
+                  <span class="truncate text-sm font-semibold">{{ member.name }}</span>
                   <span
                     v-if="member.role === 'MANAGER'"
                     class="shrink-0 rounded-full bg-approved-tint px-2 py-0.5 font-mono text-[9.5px] tracking-[0.12em] uppercase text-approved"
@@ -205,12 +213,12 @@ async function remove(member: Member) {
               <button
                 type="button"
                 class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-correction transition-colors hover:border-correction/30 hover:bg-coral/10"
-                @click="remove(member)"
+                @click.stop="remove(member)"
               >
                 Remove
               </button>
             </span>
-          </div>
+          </NuxtLink>
         </div>
 
         <EmptyState v-else class="mt-2.5 border-y border-ink-subtle" title="No members yet">
@@ -223,5 +231,81 @@ async function remove(member: Member) {
         </p>
       </section>
     </template>
+
+    <!-- Assign users modal -->
+    <Teleport to="body">
+      <div
+        v-if="showAssign"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 p-4"
+        @click.self="showAssign = false"
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Assign users"
+          class="rise flex max-h-[80vh] w-full max-w-lg flex-col rounded-[6px] border border-ink-subtle bg-white shadow-2xl"
+        >
+          <div class="flex items-start justify-between gap-4 p-6 pb-4">
+            <div>
+              <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink-muted">Assign users</p>
+              <p class="mt-1 text-sm text-ink-soft">Pick who works on “{{ project?.name }}”.</p>
+            </div>
+            <button
+              type="button"
+              title="Close"
+              aria-label="Close"
+              class="-m-1 flex size-7 shrink-0 cursor-pointer items-center justify-center text-ink-muted transition-colors hover:text-coral"
+              @click="showAssign = false"
+            >
+              <svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto border-y border-ink-subtle">
+            <label
+              v-for="user in candidates"
+              :key="user.id"
+              class="flex cursor-pointer items-center gap-3 border-b border-ink-subtle px-6 py-3 transition-colors last:border-b-0 hover:bg-ink-tint"
+            >
+              <input
+                type="checkbox"
+                class="size-4 cursor-pointer accent-coral"
+                :checked="selectedIds.includes(user.id)"
+                @change="toggle(user.id)"
+              >
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-semibold">{{ user.name }}</span>
+                <span class="block truncate text-[12px] text-ink-muted">{{ user.email }}</span>
+              </span>
+              <span
+                v-if="user.role === 'MANAGER'"
+                class="shrink-0 rounded-full bg-approved-tint px-2 py-0.5 font-mono text-[9.5px] tracking-[0.12em] uppercase text-approved"
+              >
+                Manager
+              </span>
+            </label>
+            <p v-if="candidates.length === 0" class="px-6 py-8 text-center text-sm text-ink-muted">
+              Everyone is already assigned to this project.
+            </p>
+          </div>
+
+          <div class="flex items-center justify-between gap-4 p-6">
+            <p class="font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-muted">
+              {{ selectedIds.length }} selected
+            </p>
+            <button
+              type="button"
+              :disabled="selectedIds.length === 0 || assigning"
+              class="cursor-pointer rounded-[10px] bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a3a3a] disabled:cursor-not-allowed disabled:opacity-50"
+              @click="addSelected"
+            >
+              {{ assigning ? 'Adding…' : 'Add to project' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

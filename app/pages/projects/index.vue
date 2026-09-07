@@ -196,19 +196,16 @@ const newestCreated = computed(() => {
       <!-- List -->
       <section class="mt-6 flex flex-1 flex-col">
         <div v-if="filtered.length" class="border-t border-ink-subtle">
-          <div
+          <NuxtLink
             v-for="project in filtered"
             :key="project.id"
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_105px_105px_110px_auto]"
+            :to="`/projects/${project.id}`"
+            class="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_105px_105px_110px_auto]"
           >
             <span class="min-w-0">
-              <NuxtLink
-                :to="`/projects/${project.id}`"
-                class="block truncate text-sm font-semibold hover:text-coral"
-                :title="`Manage members of ${project.name}`"
-              >
+              <span class="block truncate text-sm font-semibold" :title="`Manage members of ${project.name}`">
                 {{ project.name }}
-              </NuxtLink>
+              </span>
               <span class="block truncate text-[12px] text-ink-muted">{{ project.description ?? 'No description' }}</span>
             </span>
 
@@ -228,19 +225,19 @@ const newestCreated = computed(() => {
               <button
                 type="button"
                 class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-soft transition-colors hover:border-ink-subtle hover:text-ink"
-                @click="openEdit(project)"
+                @click.stop="openEdit(project)"
               >
                 Edit
               </button>
               <button
                 type="button"
                 class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-correction transition-colors hover:border-correction/30 hover:bg-coral/10"
-                @click="remove(project)"
+                @click.stop="remove(project)"
               >
                 Delete
               </button>
             </span>
-          </div>
+          </NuxtLink>
         </div>
 
         <!-- Empty state -->
