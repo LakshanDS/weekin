@@ -1,3 +1,5 @@
+import { and, eq } from 'drizzle-orm'
+import { projectMembers } from '../../../database/schema'
 import { updateReportContentSchema } from '#shared/schemas/report'
 import { loadReportFor, saveContent, validateAssignedManager } from '../../../utils/reports'
 
@@ -19,6 +21,17 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await validateBody(event, updateReportContentSchema)
+  // Members can only move a report to a project they are assigned to; keeping
+  // the stored project stays allowed even if the assignment was since removed.
+  if (body.projectId && body.projectId !== report.projectId && session.role === 'MEMBER') {
+    const [assigned] = await database
+      .select({ id: projectMembers.id })
+      .from(projectMembers)
+      .where(and(eq(projectMembers.userId, session.id), eq(projectMembers.projectId, body.projectId)))
+    if (!assigned) {
+      throw createError({ statusCode: 403, statusMessage: 'You are not assigned to this project' })
+    }
+  }
   await validateAssignedManager(database, body.assignedManagerId)
   const versionId = await saveContent(database, report.id, body.projectId, body.assignedManagerId, body.content)
   return { ok: true, versionId }
