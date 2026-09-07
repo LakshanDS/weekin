@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { reports, reportVersions, projects } from '../../database/schema'
+import { reports, reportVersions, projectMembers, projects } from '../../database/schema'
 import { createReportSchema } from '#shared/schemas/report'
 import { addDaysIso, mondayOf } from '#shared/utils/week'
 import { validateAssignedManager } from '../../utils/reports'
@@ -17,6 +17,16 @@ export default defineEventHandler(async (event) => {
       .where(eq(projects.id, body.projectId))
     if (!project) {
       throw createError({ statusCode: 422, statusMessage: 'Unknown project' })
+    }
+    // Members can only file under projects a manager assigned them to.
+    if (session.role === 'MEMBER') {
+      const [assigned] = await database
+        .select({ id: projectMembers.id })
+        .from(projectMembers)
+        .where(and(eq(projectMembers.userId, session.id), eq(projectMembers.projectId, body.projectId)))
+      if (!assigned) {
+        throw createError({ statusCode: 403, statusMessage: 'You are not assigned to this project' })
+      }
     }
   }
   await validateAssignedManager(database, body.assignedManagerId)

@@ -70,6 +70,25 @@ export const reports = pgTable(
   ],
 )
 
+// Manager-assigned memberships gate which projects a member can file reports against.
+export const projectMembers = pgTable(
+  'project_members',
+  {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('project_members_project_user_uq').on(t.projectId, t.userId),
+    index('project_members_user_id_idx').on(t.userId),
+  ],
+)
+
 // One row per content snapshot. Draft edits update the latest unsubmitted row
 // in place; every submit freezes it, so correction cycles build up history.
 export const reportVersions = pgTable(

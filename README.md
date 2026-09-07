@@ -142,7 +142,7 @@ The seed generates six weeks of reports per member across every workflow status,
 
 **Team member**: register → My Reports → New report (task table with priority/planned-vs-actual %/time/deliverable, next-week plan, blockers and achievements with a "key" flag, hours by type, notes, assigned manager) → Save draft → Submit for review. When a report comes back, the manager's comment appears on the report; edit and resubmit — every submitted version stays in the history. Account settings (name, password change) live in the account menu.
 
-**Manager**: Dashboard (weekly compliance, open blockers, needs-correction count, task trend, status by member, hours by project and task type, activity feed) → Review queue (reports assigned to you sort first) → open a submitted report → Approve, or Request changes with a comment tied to the version under review → the member can view past versions side by side with the current one. Any manager can review any report; the assigned one is flagged. Also: Team week view (all members' key blockers/achievements side by side), Members (roles, invites, removal, manager badge), Projects (CRUD), and the AI assistant chat.
+**Manager**: Dashboard (weekly compliance, open blockers, needs-correction count, task trend, status by member, hours by project and task type, activity feed) → Review queue (reports assigned to you sort first) → open a submitted report → Approve, or Request changes with a comment tied to the version under review → the member can view past versions side by side with the current one. Any manager can review any report; the assigned one is flagged. Also: Team week view (all members' key blockers/achievements side by side), Members (roles, invites, removal, manager badge), Projects (CRUD; assign team members to projects — the report form only offers a member's assigned projects), and the AI assistant chat.
 
 Filters (search/status/role/week/page) on the members, reports, review and team pages live in the URL query, so navigating back from a report or profile restores the exact filtered view; the dashboard's review queue and activity feed respect the selected week. Every page sets its own tab title.
 
@@ -165,7 +165,7 @@ All routes under `/api`, JSON, cookie-authenticated. List endpoints support pagi
 | Reports | `GET/POST /reports`, `GET/PUT /reports/:id`, `POST /reports/:id/submit`, `POST /reports/:id/approve` 🛡, `POST /reports/:id/request-changes` 🛡, `GET /reports/:id/versions` |
 | Dashboard | `GET /dashboard` 🛡 |
 | Team | `GET /team/week` 🛡, `GET /team/:id` 🛡 |
-| Projects | `GET /projects`, `POST /projects` 🛡, `PUT/DELETE /projects/:id` 🛡 |
+| Projects | `GET /projects` (or `?mine=1` for the caller's assigned projects), `POST /projects` 🛡, `PUT/DELETE /projects/:id` 🛡, `GET/POST /projects/:id/members` 🛡, `DELETE /projects/:id/members/:userId` 🛡 |
 | Users | `GET /users/managers`, `GET/POST /users` 🛡, `PUT/DELETE /users/:id` 🛡 (`PUT {status:'ACTIVE'}` approves a signup) |
 | AI | `POST /ai/chat` 🛡 |
 

@@ -8,6 +8,7 @@ interface Project {
   description: string | null
   createdAt: string
   reportCount: number
+  memberCount: number
 }
 
 const projects = ref<Project[]>([])
@@ -198,10 +199,18 @@ const newestCreated = computed(() => {
           <div
             v-for="project in filtered"
             :key="project.id"
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_110px_110px_auto]"
+            class="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-b border-ink-subtle px-3 py-3.5 transition-colors hover:bg-ink-tint sm:grid-cols-[minmax(0,2.4fr)_105px_105px_110px_auto]"
           >
+            <NuxtLink
+              :to="`/projects/${project.id}`"
+              class="absolute inset-0 z-0"
+              :aria-label="`Manage members of ${project.name}`"
+              :title="`Manage members of ${project.name}`"
+            />
             <span class="min-w-0">
-              <b class="block truncate text-sm font-semibold">{{ project.name }}</b>
+              <span class="block truncate text-sm font-semibold">
+                {{ project.name }}
+              </span>
               <span class="block truncate text-[12px] text-ink-muted">{{ project.description ?? 'No description' }}</span>
             </span>
 
@@ -209,11 +218,15 @@ const newestCreated = computed(() => {
               {{ project.reportCount }} report{{ project.reportCount === 1 ? '' : 's' }}
             </span>
 
+            <span class="hidden text-[13px] text-ink-soft sm:block" title="Members assigned to this project">
+              {{ project.memberCount }} member{{ project.memberCount === 1 ? '' : 's' }}
+            </span>
+
             <span class="hidden font-mono text-xs whitespace-nowrap text-ink-muted sm:block">
               {{ dt.format(new Date(project.createdAt)) }}
             </span>
 
-            <span class="flex items-center justify-end gap-2">
+            <span class="relative z-10 flex items-center justify-end gap-2">
               <button
                 type="button"
                 class="inline-flex h-7 cursor-pointer items-center rounded-[6px] border border-transparent px-2.5 font-mono text-[10.5px] tracking-[0.12em] uppercase text-ink-soft transition-colors hover:border-ink-subtle hover:text-ink"
