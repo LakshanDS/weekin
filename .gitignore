@@ -39,3 +39,6 @@ docs/
 # Local .github scratch — but the CI workflow ships with the repo
 .github/*
 !.github/workflows/
+
+# ZCode local session artifacts
+.zcode/
