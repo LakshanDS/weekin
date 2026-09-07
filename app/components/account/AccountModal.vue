@@ -303,10 +303,10 @@ async function submit() {
             </div>
           </section>
 
-          <p v-if="formError" role="alert" class="mt-5 border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+          <p v-if="formError" role="alert" class="mt-5 rounded-[6px] border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
             {{ formError }}
           </p>
-          <p v-if="success" role="status" class="mt-5 border border-approved/40 bg-approved/10 px-3.5 py-2.5 text-sm text-approved">
+          <p v-if="success" role="status" class="mt-5 rounded-[6px] border border-approved/40 bg-approved/10 px-3.5 py-2.5 text-sm text-approved">
             Settings updated.
           </p>
 

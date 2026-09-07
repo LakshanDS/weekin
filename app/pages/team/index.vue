@@ -116,9 +116,9 @@ const weekRange = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-1 flex-col">
     <!-- Briefing band -->
-    <section class="pt-4">
+    <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
           <h1
@@ -164,7 +164,7 @@ const weekRange = computed(() => {
 
     <template v-else>
       <!-- Filters: search · week · status · reset -->
-      <div v-if="rows.length > 0" class="rise mt-5 flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
+      <div v-if="rows.length > 0" class="rise flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
         <input
           v-model="search"
           type="search"
@@ -210,8 +210,8 @@ const weekRange = computed(() => {
       </div>
 
       <!-- Side-by-side week rows -->
-      <section class="mt-6">
-        <div class="border-t border-ink-subtle">
+      <section class="mt-6 flex flex-1 flex-col">
+        <div v-if="filtered.length" class="border-t border-ink-subtle">
           <NuxtLink
             v-for="row in filtered"
             :key="row.userId"
@@ -267,42 +267,22 @@ const weekRange = computed(() => {
         </div>
 
         <!-- Empty: no members at all -->
-        <div
-          v-if="rows.length === 0"
-          class="flex min-h-[45vh] flex-col items-center justify-center gap-3 text-center"
+        <EmptyState
+          v-else-if="rows.length === 0"
+          class="border-t border-ink-subtle"
+          title="No members yet"
         >
-          <span
-            class="flex size-12 items-center justify-center rounded-full bg-ink-tint font-mono text-lg text-ink-muted"
-            aria-hidden="true"
-          >
-            ✓
-          </span>
-          <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
-            No members yet
-          </p>
-          <p class="max-w-[400px] text-[14px] leading-[1.5] text-ink-soft">
-            Team members will appear here once they're added to the workspace.
-          </p>
-        </div>
+          Team members will appear here once they're added to the workspace.
+        </EmptyState>
 
         <!-- Empty: filters matched nothing -->
-        <div
-          v-else-if="filtered.length === 0"
-          class="flex flex-col items-center gap-3 border-t border-b border-ink-subtle py-10 text-center"
+        <EmptyState
+          v-else
+          class="border-t border-ink-subtle"
+          title="No one matches"
         >
-          <span
-            class="flex size-12 items-center justify-center rounded-full bg-ink-tint font-mono text-lg text-ink-muted"
-            aria-hidden="true"
-          >
-            ✓
-          </span>
-          <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
-            No one matches
-          </p>
-          <p class="max-w-[400px] text-[14px] leading-[1.5] text-ink-soft">
-            Try a different search or clear the filters to see the whole team.
-          </p>
-        </div>
+          Try a different search or clear the filters to see the whole team.
+        </EmptyState>
       </section>
     </template>
   </div>

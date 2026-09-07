@@ -135,7 +135,7 @@ const FACTS = [
         </h1>
 
         <form class="mt-7 grid gap-5" novalidate @submit.prevent="submit" style="animation-delay: 0.25s">
-          <p v-if="formError" role="alert" class="border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
+          <p v-if="formError" role="alert" class="rounded-[6px] border border-correction/40 bg-correction/10 px-3.5 py-2.5 text-sm text-correction">
             {{ formError }}
           </p>
 
