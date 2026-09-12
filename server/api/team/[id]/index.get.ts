@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, ne } from 'drizzle-orm'
 import { projects, reports, reportVersions, users } from '../../../database/schema'
 
 // GET /api/team/:id — one member's profile: basic stats + report history (manager only)
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     })
     .from(reports)
     .leftJoin(projects, eq(projects.id, reports.projectId))
-    .where(eq(reports.userId, id))
+    .where(and(eq(reports.userId, id), ne(reports.status, 'DRAFT')))
     .orderBy(desc(reports.weekStart))
 
   // Content stats over each report's latest submitted version, fetched in SQL —
