@@ -1,8 +1,7 @@
 // Integration test for the review cycle and role-based access control.
-// Requires the dev server running with a seeded database (bun run dev && bun run db:seed:demo):
-//   bun run test
-// The fixed test weeks are cleared of leftover reports directly in the DB (the API
-// has no report delete; versions and comments cascade), so re-runs don't hit 409.
+// Requires the dev server running with a seeded database (bun run dev && bun run db:seed:demo).
+// Fixed test weeks are cleared directly in the DB beforeAll (the API has no report delete;
+// versions and comments cascade), so re-runs don't hit 409.
 import { beforeAll, describe, expect, it } from 'vitest'
 import postgres from 'postgres'
 

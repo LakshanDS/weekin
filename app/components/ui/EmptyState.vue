@@ -1,7 +1,6 @@
 <script setup lang="ts">
-// Shared empty state: centered in the space below the page header/filters.
-// fill (default) stretches to the page bottom; :fill="false" keeps it compact
-// for empty states rendered inside a bordered list.
+// Shared empty state, centered below the page header/filters. fill (default) stretches to the
+// page bottom; :fill="false" keeps it compact for use inside a bordered list.
 withDefaults(defineProps<{ icon?: string; title: string; fill?: boolean }>(), {
   icon: '✓',
   fill: true,

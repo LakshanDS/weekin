@@ -11,8 +11,7 @@ export function useAuth() {
   const initialized = useState('auth:initialized', () => false)
   const requestFetch = useRequestFetch()
 
-  // Resolve the session once per app load; the httpOnly cookie travels
-  // automatically (useRequestFetch forwards it during SSR).
+  // Resolves once per app load (httpOnly cookie travels automatically via useRequestFetch).
   // force=true re-fetches even if already resolved (approval polling).
   async function fetchMe(force = false) {
     if (initialized.value && !force) return

@@ -31,8 +31,7 @@ export default defineEventHandler(async (event) => {
   }
   await validateAssignedManager(database, body.assignedManagerId)
 
-  // Weeks are normalised server-side: always Monday..Friday, so team views
-  // and the one-report-per-week rule can't be dodged with custom dates.
+  // Weeks normalise to Monday..Friday server-side, so the one-report-per-week rule can't be dodged.
   const weekStart = mondayOf(body.weekStart)
   const weekEnd = addDaysIso(weekStart, 4)
 

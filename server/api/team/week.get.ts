@@ -1,8 +1,8 @@
 import { and, eq, gte, inArray, isNotNull, lte, ne } from 'drizzle-orm'
 import { reports, reportVersions, users, projects } from '../../database/schema'
 
-// GET /api/team/week?week=YYYY-MM-DD — every member's report for one week,
-// with the key blocker / key achievement for the side-by-side view (manager only).
+// GET /api/team/week?week=YYYY-MM-DD — every member's report for one week, with key
+// blocker / achievement for the side-by-side view (manager only).
 export default defineEventHandler(async (event) => {
   await requireManager(event)
   const query = getQuery(event)

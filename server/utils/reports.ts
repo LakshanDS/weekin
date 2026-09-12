@@ -32,8 +32,7 @@ export async function validateAssignedManager(database: ReturnType<typeof useDat
   }
 }
 
-// Load a report and enforce access: owners see their own, managers see all,
-// anyone else gets a 404 (no existence leak).
+// Load a report and enforce access: owners and managers only, 404 otherwise (no existence leak).
 export async function loadReportFor(event: H3Event, id: number) {
   const session = requireUser(event)
   const database = useDatabase(event)
@@ -62,7 +61,7 @@ export async function loadReportFor(event: H3Event, id: number) {
   if (!row || (session.role !== 'MANAGER' && row.userId !== session.id)) {
     throw createError({ statusCode: 404, statusMessage: 'Report not found' })
   }
-  // Drafts are private to their owner; other managers get the same 404 (no existence leak).
+  // Drafts are private to their owner — other managers get the same 404.
   if (row.status === 'DRAFT' && session.role === 'MANAGER' && row.userId !== session.id) {
     throw createError({ statusCode: 404, statusMessage: 'Report not found' })
   }
@@ -102,8 +101,7 @@ export async function getVisibleVersionId(database: ReturnType<typeof useDatabas
   return version?.id ?? null
 }
 
-// Draft edits update the unsubmitted version in place; once frozen, edits
-// open a new version. Returns the id of the version holding current content.
+// Draft edits update the unsubmitted version in place; once frozen, edits open a new version.
 export async function saveContent(
   database: ReturnType<typeof useDatabase>,
   reportId: number,
@@ -111,9 +109,8 @@ export async function saveContent(
   assignedManagerId: number,
   content: ReportContent,
 ) {
-  // Status-guarded rewrite: a concurrent submit freezes the report, the update
-  // matches nothing and the caller gets a 409 instead of silently repointing a
-  // reviewed report at another project/manager.
+  // Status-guarded rewrite: a concurrent submit freezes the report, the update matches
+  // nothing, and the caller gets a 409 instead of silently repointing a reviewed report.
   const touched = await database
     .update(reports)
     .set({ projectId, assignedManagerId, updatedAt: new Date() })
@@ -126,8 +123,8 @@ export async function saveContent(
   const latest = await getLatestVersion(database, reportId)
 
   if (latest && latest.submittedAt === null) {
-    // Guarded update: if the version was frozen (submitted) between our read
-    // and write, the WHERE matches nothing and we fall through to a new version.
+    // Guarded update: if the version was frozen between our read and write, the WHERE
+    // matches nothing and we fall through to inserting a new version.
     const updated = await database
       .update(reportVersions)
       .set({ ...content })
@@ -136,8 +133,8 @@ export async function saveContent(
     if (updated.length) return updated[0].id
   }
 
-  // versionNo is computed outside a transaction: a concurrent submit can take
-  // the same number and hit the unique index — re-read and insert once more.
+  // versionNo is computed outside a transaction: a concurrent submit can take the same
+  // number and hit the unique index — re-read and insert once more.
   for (let attempt = 0; ; attempt++) {
     const current = attempt === 0 ? latest : await getLatestVersion(database, reportId)
     try {

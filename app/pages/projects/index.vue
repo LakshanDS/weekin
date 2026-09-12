@@ -46,7 +46,6 @@ async function run(action: () => Promise<unknown>) {
   }
 }
 
-// create & edit share one modal
 const showModal = ref(false)
 const editing = ref<Project | null>(null)
 const form = ref({ name: '', description: '' })
@@ -121,7 +120,6 @@ const newestCreated = computed(() => {
 
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Briefing band -->
     <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
@@ -166,7 +164,6 @@ const newestCreated = computed(() => {
     <p v-if="loading" class="rise mt-8 font-mono text-sm text-ink-muted">Loading projects…</p>
 
     <template v-else>
-      <!-- Filters: search · add project -->
       <div class="rise flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
         <input
           v-model="search"
@@ -193,7 +190,6 @@ const newestCreated = computed(() => {
         {{ error }}
       </p>
 
-      <!-- List -->
       <section class="mt-6 flex flex-1 flex-col">
         <div v-if="filtered.length" class="border-t border-ink-subtle">
           <div
@@ -245,7 +241,6 @@ const newestCreated = computed(() => {
           </div>
         </div>
 
-        <!-- Empty state -->
         <EmptyState
           v-else-if="projects.length === 0"
           icon="+"
@@ -262,7 +257,6 @@ const newestCreated = computed(() => {
       </section>
     </template>
 
-    <!-- Create / edit modal -->
     <Teleport to="body">
       <div
         v-if="showModal"

@@ -14,9 +14,8 @@ export function initials(name: string): string {
   return name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
-// Markdown → HTML for AI chat replies. Escapes HTML first so only our own
-// tags can appear; covers the subset the model emits (headings, bold,
-// italics, code, lists, tables, paragraphs).
+// Markdown → HTML for AI chat replies. Escapes HTML first so only our own tags can appear;
+// covers the subset the model emits (headings, bold, italics, code, lists, tables, paragraphs).
 export function renderMarkdown(text: string): string {
   const inline = (s: string) =>
     s

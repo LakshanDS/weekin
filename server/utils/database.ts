@@ -18,9 +18,8 @@ function createClient() {
       statusMessage: 'NUXT_DATABASE_URL is not configured',
     })
   }
-  // prepare:false is required on Workers (no prepared statements over TCP).
-  // A short idle timeout means sockets close quickly and never leak across
-  // the Workers per-request I/O contexts.
+  // prepare:false is required on Workers (no prepared statements over TCP); the short
+  // idle timeout keeps sockets from leaking across Workers request contexts.
   return drizzle(
     postgres(config.databaseUrl, {
       prepare: false,
@@ -35,10 +34,8 @@ function createClient() {
   )
 }
 
-// Node (dev/preview): one pooled client per server instance.
-// Workers: sockets may not cross request boundaries, so without an event the
-// client is fresh per call; with an event it is cached on the request context
-// so every handler/util in one request shares a single connection.
+// Node: one pooled client per process. Workers: sockets may not cross request
+// boundaries — fresh client per call unless an event pins it to the request context.
 export function useDatabase(event?: H3Event): Database {
   if (event) {
     if (!event.context.db) event.context.db = createClient()

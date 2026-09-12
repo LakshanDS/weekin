@@ -4,8 +4,7 @@ import type { ReportContent as ReportContentType, TaskItem } from '#shared/types
 import { addDaysIso, currentWeekRange } from '#shared/utils/week'
 import { z } from 'zod'
 
-// Editor for create (/reports/new) and edit (/reports/:id/edit).
-// Emits after saving; the parent decides where to navigate.
+// Editor for create (/reports/new) and edit (/reports/:id/edit); the parent decides post-save navigation.
 const props = defineProps<{
   initial?: {
     reportId: number
@@ -159,7 +158,6 @@ const MINI_SELECT = 'h-[38px] cursor-pointer rounded-md border border-ink-subtle
       </ul>
     </div>
 
-    <!-- Week, reviewing manager & project on one row -->
     <section class="grid gap-5" :class="week.reportId ? 'md:grid-cols-2' : 'md:grid-cols-3'">
       <div v-if="!week.reportId">
         <span :class="LABEL">Week</span>
@@ -181,7 +179,6 @@ const MINI_SELECT = 'h-[38px] cursor-pointer rounded-md border border-ink-subtle
       </div>
     </section>
 
-    <!-- Tasks -->
     <section>
       <div class="mb-3 flex items-center justify-between">
         <h3 :class="EYEBROW">Tasks completed</h3>
@@ -226,7 +223,6 @@ const MINI_SELECT = 'h-[38px] cursor-pointer rounded-md border border-ink-subtle
       </div>
     </section>
 
-    <!-- Hours -->
     <section>
       <h3 :class="`${EYEBROW} mb-3 block`">Hours by type (optional)</h3>
       <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -237,7 +233,6 @@ const MINI_SELECT = 'h-[38px] cursor-pointer rounded-md border border-ink-subtle
       </div>
     </section>
 
-    <!-- Blockers & achievements -->
     <div class="grid gap-8 md:grid-cols-2">
       <section v-for="list in [{ key: 'achievements', title: 'Achievements', add: '+ Add achievement', items: achievements, accent: 'approved' },
                                { key: 'blockers', title: 'Blockers', add: '+ Add blocker', items: blockers, accent: 'correction' }]"
@@ -271,19 +266,17 @@ const MINI_SELECT = 'h-[38px] cursor-pointer rounded-md border border-ink-subtle
       </section>
     </div>
 
-    <!-- Next week -->
     <section>
       <h3 :class="`${EYEBROW} mb-3 block`">Planned for next week</h3>
       <textarea v-model="nextWeekLines" rows="4" placeholder="One item per line" :class="INPUT" />
     </section>
 
-    <!-- Notes -->
     <section>
       <h3 :class="`${EYEBROW} mb-3 block`">Notes & links (optional)</h3>
       <textarea v-model="notes" rows="2" placeholder="Context, links to PRs or documents…" :class="INPUT" />
     </section>
 
-    <!-- Actions: one row on mobile — Save draft takes ⅓, submit the rest -->
+    <!-- On mobile one row: draft takes ⅓, submit the rest -->
     <div class="flex flex-wrap items-center gap-3 border-t border-ink-subtle pt-6 max-sm:grid max-sm:grid-cols-3 max-sm:gap-2">
       <button :disabled="saving" type="button"
         class="cursor-pointer rounded-[10px] border border-ink-subtle px-5 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-ink-tint disabled:opacity-60 max-sm:col-span-1 max-sm:whitespace-nowrap max-sm:px-2 max-sm:text-center max-sm:text-[12.5px]"

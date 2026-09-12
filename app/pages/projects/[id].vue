@@ -133,7 +133,6 @@ async function remove(member: Member) {
 
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Briefing band -->
     <section class="flex flex-wrap items-start justify-between gap-6 pt-4 max-sm:flex-nowrap max-sm:gap-x-4">
       <div class="min-w-0 flex-1">
         <NuxtLink
@@ -185,7 +184,6 @@ async function remove(member: Member) {
         {{ error }}
       </p>
 
-      <!-- Assigned members -->
       <section class="mt-6 flex flex-1 flex-col">
         <div class="rise flex flex-wrap items-end justify-between gap-x-4 gap-y-3 px-3" style="animation-delay: 0.3s">
           <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
@@ -258,7 +256,6 @@ async function remove(member: Member) {
       </section>
     </template>
 
-    <!-- Assign users modal -->
     <Teleport to="body">
       <div
         v-if="showAssign"

@@ -117,7 +117,6 @@ const weekRange = computed(() => {
 
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Briefing band -->
     <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
@@ -163,7 +162,6 @@ const weekRange = computed(() => {
     <p v-if="loading" class="rise mt-8 font-mono text-sm text-ink-muted">Loading team…</p>
 
     <template v-else>
-      <!-- Filters: search · week · status · reset -->
       <div v-if="rows.length > 0" class="rise flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
         <input
           v-model="search"
@@ -209,7 +207,6 @@ const weekRange = computed(() => {
         </nav>
       </div>
 
-      <!-- Side-by-side week rows -->
       <section class="mt-6 flex flex-1 flex-col">
         <div v-if="filtered.length" class="border-t border-ink-subtle">
           <NuxtLink
@@ -266,7 +263,6 @@ const weekRange = computed(() => {
           </NuxtLink>
         </div>
 
-        <!-- Empty: no members at all -->
         <EmptyState
           v-else-if="rows.length === 0"
           class="border-t border-ink-subtle"
@@ -275,7 +271,6 @@ const weekRange = computed(() => {
           Team members will appear here once they're added to the workspace.
         </EmptyState>
 
-        <!-- Empty: filters matched nothing -->
         <EmptyState
           v-else
           class="border-t border-ink-subtle"

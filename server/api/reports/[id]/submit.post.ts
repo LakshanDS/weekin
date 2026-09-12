@@ -2,8 +2,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { reports, reportVersions } from '../../../database/schema'
 import { loadReportFor, getLatestVersion } from '../../../utils/reports'
 
-// POST /api/reports/:id/submit — owner submits for review.
-// Freezes the current content as the version under review.
+// POST /api/reports/:id/submit — owner submits for review, freezing the current content.
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   const { session, database, report } = await loadReportFor(event, Number(id))

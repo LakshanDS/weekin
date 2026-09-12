@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
       })
       .returning({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status })
 
-    await setSessionCookie(event, { id: user.id, role: user.role })
+    await setSessionCookie(event, { id: user.id, role: user.role, status: user.status })
     setResponseStatus(event, 201)
     return { user }
   } catch (err) {

@@ -3,8 +3,7 @@ import { users } from '../../database/schema'
 import { loginSchema } from '#shared/schemas/auth'
 import { verifyPassword, setSessionCookie } from '../../utils/auth'
 
-// Burn a bcrypt compare for unknown emails so response timing can't reveal
-// whether the address is registered.
+// Burn a bcrypt compare for unknown emails so timing can't reveal registration.
 const DUMMY_HASH = '$2b$10$hCXZ1SzBokBQl78czS60dOOG/5soMIyZdTLO19.A6f0kl34xNI0iq'
 
 export default defineEventHandler(async (event) => {
@@ -22,6 +21,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' })
   }
 
-  await setSessionCookie(event, { id: user.id, role: user.role })
+  await setSessionCookie(event, { id: user.id, role: user.role, status: user.status })
   return { user: { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status } }
 })

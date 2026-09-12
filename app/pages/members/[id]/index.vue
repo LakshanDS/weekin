@@ -39,7 +39,6 @@ onMounted(async () => {
   }
 })
 
-// Same strip as the dashboard: big number, label, sub-line
 const stats = computed(() => {
   const s = profile.value?.stats
   if (!s) return []
@@ -61,7 +60,6 @@ const stats = computed(() => {
       <h1 class="mt-2 text-3xl font-bold tracking-tight">{{ profile.member.name }}</h1>
       <p class="mt-1 text-ink-500">{{ profile.member.email }} · joined {{ new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(profile.member.createdAt)) }}</p>
 
-      <!-- Stats -->
       <div class="mt-6 grid grid-cols-2 border-t border-ink-subtle lg:grid-cols-4">
         <div
           v-for="(s, i) in stats"
@@ -75,7 +73,6 @@ const stats = computed(() => {
         </div>
       </div>
 
-      <!-- History -->
       <h2 class="mt-8 mb-3 font-mono text-[11px] tracking-widest text-ink-500 uppercase">Report history</h2>
       <div v-if="profile.history.length" class="border-t border-ink-subtle">
         <table class="w-full text-sm">

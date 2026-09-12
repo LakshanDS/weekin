@@ -1,8 +1,6 @@
-// Demo seed: 3 managers, 10 members, 6 projects and ~a year of weekly reports —
-// approvals, 1-2 round correction cycles, awaiting-review queues, drafts, late
-// submits, leave gaps and a pending-signup queue. Deterministic (seeded PRNG),
-// so re-running always rebuilds the same dataset.
-// Run: ALLOW_DEMO_SEED=1 bun server/database/seed.demo.ts   (bun auto-loads .env)
+// Demo seed: 3 managers, 10 members, 6 projects and ~a year of weekly reports
+// across every workflow status. Deterministic (seeded PRNG) — re-running rebuilds
+// the same dataset. Run: ALLOW_DEMO_SEED=1 bun server/database/seed.demo.ts
 
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -31,8 +29,6 @@ const database = drizzle(postgres(process.env.NUXT_DATABASE_URL!, { max: 1 }), {
 const DEMO_PASSWORD = 'password123'
 const YEAR_WEEKS = 52 // including the current week
 
-// ---------- deterministic PRNG ----------
-
 function mulberry32(seed: number) {
   return () => {
     seed |= 0
@@ -48,8 +44,6 @@ const chance = (p: number) => rnd() < p
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(rnd() * arr.length)]!
 }
-
-// ---------- date helpers ----------
 
 function toIso(d: Date) {
   return d.toISOString().slice(0, 10)
@@ -72,8 +66,7 @@ function addHours(d: Date, hours: number) {
 }
 
 const NOW = Date.now()
-// Correction cycles resolve "a couple of days after submission" — that can
-// land in the future when the seed runs early in the current week.
+// Correction cycles can land in the future when the seed runs early in the week — clamp to now.
 function clampPast(d: Date) {
   return new Date(Math.min(d.getTime(), NOW - 60_000))
 }
@@ -83,8 +76,6 @@ const WEEKS = Array.from({ length: YEAR_WEEKS }, (_, i) => {
   const monday = addDays(mondayOf(new Date()), -7 * (YEAR_WEEKS - 1 - i))
   return { weekStart: monday, weekEnd: addDays(monday, 4) }
 })
-
-// ---------- people ----------
 
 const MANAGERS = [
   { name: 'Ruwan Jayasuriya', email: 'manager@demo.io' },
@@ -111,8 +102,6 @@ const PENDING_MEMBERS = [
   { name: 'Oshadi Gunasekara', email: 'oshadi@demo.io' },
   { name: 'Peter Novak', email: 'peter@demo.io' },
 ]
-
-// ---------- content pools ----------
 
 const PROJECTS = [
   {
@@ -272,12 +261,9 @@ const NOTES = [
   'Half-day leave on Friday, hours adjusted.',
 ]
 
-// ---------- status plan ----------
-
-//   A   = approved, first submission       AC = approved after one correction cycle
-//   ACC = approved after two cycles        S  = submitted, awaiting review
-//   NC  = needs correction (not fixed yet) D  = draft in progress
-//   null = no report that week (leave / not started)
+// Status legend for kindForWeek():
+//   A=approved, first submission  AC=approved after one correction cycle  ACC=after two
+//   S=submitted, awaiting review  NC=needs correction  D=draft  null=no report that week
 function kindForWeek(weekIdx: number): 'A' | 'AC' | 'ACC' | 'S' | 'NC' | 'D' | null {
   const last = YEAR_WEEKS - 1
   if (weekIdx === last) {
@@ -301,8 +287,6 @@ function kindForWeek(weekIdx: number): 'A' | 'AC' | 'ACC' | 'S' | 'NC' | 'D' | n
   if (r < 0.98) return 'ACC'
   return 'S' // stale submission in the manager backlog
 }
-
-// ---------- content generation ----------
 
 function makeTasks(projectIdx: number, weekIdx: number, revised: number): TaskItem[] {
   const pool = PROJECTS[projectIdx]!.tasks
@@ -374,8 +358,6 @@ function makeContent(projectIdx: number, weekIdx: number, revised: number) {
     notes,
   }
 }
-
-// ---------- seed ----------
 
 type VersionDraft = {
   reportIdx: number
@@ -454,8 +436,8 @@ async function main() {
     .values(PROJECTS.map((p) => ({ name: p.name, description: p.description })))
     .returning()
 
-  // Two assignments per member — the form only offers assigned projects, so each
-  // member needs a choice. memberRnd keeps the report data stream unchanged.
+  // Two assignments per member — the form only offers assigned projects; memberRnd
+  // is a fresh stream so the report data below stays deterministic.
   const memberRnd = mulberry32(20260907)
   await database.insert(projectMembers).values(
     members.flatMap((member, mi) => {
@@ -509,7 +491,6 @@ async function main() {
         new Date(`${late ? addDays(week.weekEnd, 1) : week.weekEnd}T${randInt(15, 18)}:${String(pick([0, 15, 30, 45])).padStart(2, '0')}:00Z`),
       )
 
-      // Review timeline
       const firstReviewAt = clampPast(addHours(submittedAt, randInt(3, 24)))
       const v2SubmittedAt = clampPast(addHours(submittedAt, randInt(40, 72)))
       const secondReviewAt = clampPast(addHours(v2SubmittedAt, randInt(2, 12)))

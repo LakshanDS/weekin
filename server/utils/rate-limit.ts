@@ -1,8 +1,5 @@
-// Minimal fixed-window rate limiter for abuse-prone endpoints
-// (login brute force, bulk registration, AI cost abuse).
-// In-memory per server instance — on Cloudflare Workers each isolate keeps its
-// own counters, which still raises the bar; upgrade to a distributed limiter
-// only if this ever needs one.
+// Minimal fixed-window rate limiter for abuse-prone endpoints. In-memory per server
+// instance — on Workers each isolate keeps its own counters; upgrade only if ever needed.
 
 const buckets = new Map<string, { count: number; resetAt: number }>()
 let lastSweep = 0

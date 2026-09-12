@@ -1,8 +1,7 @@
 import { asc, eq, and } from 'drizzle-orm'
 import { users } from '../../database/schema'
 
-// GET /api/users/managers — active managers, for the report's assigned-manager
-// picker. Any signed-in member can list them (names only, no emails).
+// GET /api/users/managers — active managers for the assigned-manager picker (names only).
 export default defineEventHandler(async (event) => {
   await requireUser(event)
   const database = useDatabase(event)

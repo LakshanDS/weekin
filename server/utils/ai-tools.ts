@@ -4,9 +4,7 @@ import type { AchievementItem, BlockerItem, HoursByType, TaskItem } from '../../
 import { addDaysIso, mondayOf } from '#shared/utils/week'
 import type { ToolDef } from './ai'
 
-// Read-only agent tools: each executor fetches the window's submitted report
-// versions (same selectDistinctOn pattern as buildTeamContext) and aggregates
-// in JS — data volume is small, so we keep the SQL dumb and the math testable.
+// Read-only agent tools: small data volume, so SQL stays dumb and the math is testable.
 
 interface ReportRow {
   userName: string
@@ -113,8 +111,7 @@ async function fetchRoster(): Promise<RosterEntry[]> {
   return roster.map((u) => ({ name: u.name, memberSince: u.memberSince.toISOString().slice(0, 10) }))
 }
 
-// Mondays a member is expected to have filed: capped by the window, reduced
-// when they joined mid-window, so new members don't look like no-shows.
+// Mondays the member was expected to file — reduced by join date, so new members don't look like no-shows.
 export function expectedWeeksOf(memberSinceIso: string, windowStart: string, windowWeeks: number): number {
   const joinedMonday = mondayOf(memberSinceIso)
   const effectiveStart = joinedMonday > windowStart ? joinedMonday : windowStart
@@ -123,8 +120,8 @@ export function expectedWeeksOf(memberSinceIso: string, windowStart: string, win
   return Math.min(Math.max(weeks, 0), windowWeeks)
 }
 
-// Hours come from hoursByType (the per-report entry convention); task-level
-// timePlannedH/timeSpentH are reported separately in `taskTime`.
+// Hours come from hoursByType (the per-report convention); task-level planned/spent
+// hours are reported separately in `taskTime`.
 export function aggregateProjectHours(allRows: ReportRow[], project: string | undefined, windowStart: string, windowWeeks: number) {
   const rows = project ? allRows.filter((r) => r.projectName?.toLowerCase() === project.toLowerCase()) : allRows
 

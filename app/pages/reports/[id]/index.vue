@@ -51,8 +51,8 @@ useHead({ title: () => (detail.value?.report.userName ? `${detail.value.report.u
 const versions = ref<VersionFull[]>([])
 const error = ref('')
 
-// Back returns to wherever the user came from; dashboard visits continue to the queue, direct loads fall back to the list.
-// Arriving here from the editor (saved → navigate) is not "back" — the list is.
+// "Back" = wherever the user came from (dashboard visits continue to the queue);
+// arriving from the editor (saved → navigate) is not "back" — the list is.
 const backTo = ref('/reports')
 onMounted(() => {
   const back = router.options.history.state.back
@@ -85,7 +85,7 @@ async function load() {
 }
 await load()
 
-// PR-style timeline: each version, then the review comments made on it.
+// Each version, then the review comments made on it (PR-style timeline).
 type TimelineEvent =
   | { kind: 'version'; version: VersionFull }
   | { kind: 'comment'; comment: CommentRow }
@@ -101,7 +101,6 @@ const events = computed<TimelineEvent[]>(() => {
   return out
 })
 
-// --- actions ---
 const busy = ref(false)
 const actionError = ref('')
 const reviewComment = ref('')
@@ -126,7 +125,6 @@ const approve = () => run(() => $fetch(`/api/reports/${reportId}/approve`, { met
 const requestChanges = () =>
   run(() => $fetch(`/api/reports/${reportId}/request-changes`, { method: 'POST', body: { comment: reviewComment.value.trim() } }))
 
-// Review outcome for a version: drives the timeline card tint.
 const latestSubmittedVersionNo = computed(() =>
   versions.value.filter((v) => v.submittedAt).at(-1)?.versionNo,
 )
@@ -158,7 +156,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
     <p v-if="error" class="rise mt-8 font-mono text-sm text-correction">{{ error }}</p>
 
     <template v-else-if="detail">
-      <!-- Briefing band -->
       <section class="pt-4 pb-5">
         <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
           <div class="min-w-0 flex-1">
@@ -201,7 +198,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
         </div>
       </section>
 
-      <!-- Correction banner for the owner -->
       <div
         v-if="isOwner && detail.report.status === 'NEEDS_CORRECTION' && latestCorrection"
         class="rise mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[6px] border border-correction/30 bg-coral-tint px-4 py-3.5"
@@ -221,7 +217,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
         </NuxtLink>
       </div>
 
-      <!-- Draft banner for the owner: drafts stay editable until submitted -->
       <div
         v-if="isOwner && detail.report.status === 'DRAFT'"
         class="rise mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[6px] border border-ink-subtle bg-ink-tint px-4 py-3.5"
@@ -241,7 +236,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
         </NuxtLink>
       </div>
 
-      <!-- Draft-in-progress note for the owner -->
       <p
         v-if="isOwner && detail.content?.isDraftContent && detail.report.status === 'NEEDS_CORRECTION'"
         class="rise mt-4 font-mono text-[10.5px] tracking-[0.06em] text-ink-muted"
@@ -250,7 +244,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
         You have unsaved-to-review edits in progress (version {{ detail.content.versionNo }}). Resubmit from the editor when ready.
       </p>
 
-      <!-- Timeline: version → its review comments → next version → … → review box -->
       <p v-if="!events.length" class="rise mt-8 text-sm text-ink-muted">No content yet.</p>
 
       <ol v-else class="rise relative mt-8 before:absolute before:bottom-4 before:left-2 before:top-3 before:w-px before:bg-ink-subtle">
@@ -259,7 +252,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
           :key="event.kind === 'version' ? `v${event.version.id}` : `c${event.comment.id}`"
           class="relative pb-8 pl-10 last:pb-4"
         >
-          <!-- Version snapshot -->
           <template v-if="event.kind === 'version'">
             <span class="absolute left-0 top-0 size-4 rounded-full border-[3px] border-ink bg-white" aria-hidden="true" />
             <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -279,7 +271,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
             </div>
           </template>
 
-            <!-- Review comment on the version above -->
             <template v-else>
               <span
                 class="absolute -left-2 top-0 flex size-8 items-center justify-center rounded-full bg-ink-tint font-mono text-[9.5px] text-ink-soft"
@@ -309,7 +300,6 @@ const INPUT = 'block w-full rounded-md border border-ink-subtle bg-white px-3.5 
           </template>
         </li>
 
-        <!-- Review box closes the timeline -->
         <li v-if="isManager && detail.report.status === 'SUBMITTED'" class="relative pl-10">
           <span class="absolute left-0 top-0 size-4 rounded-full border-[3px] border-coral bg-white" aria-hidden="true" />
           <div class="flex flex-wrap items-center gap-2">

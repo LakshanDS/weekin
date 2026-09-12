@@ -1,6 +1,5 @@
-// Search inputs: the browser's native clear button is unreliable (blue / missing),
-// so main.css paints a gray × on non-empty search fields and this plugin makes
-// clicks in that zone clear the field.
+// The browser's native search-clear button is unreliable (blue / missing), so main.css
+// paints a gray × on non-empty search fields and this plugin clears on clicks in that zone.
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.hook('app:mounted', () => {
     document.addEventListener('click', (event) => {

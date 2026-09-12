@@ -50,7 +50,6 @@ const STATUS_OPTIONS: { value: '' | 'SUBMITTED' | 'RESUBMITTED'; label: string }
 onMounted(async () => {
   try {
     const res = await $fetch<{ reports: QueueRow[] }>('/api/reports?status=SUBMITTED&pageSize=100')
-    // Newest submissions on top.
     rows.value = [...res.reports].sort(
       (a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '') || b.id - a.id,
     )
@@ -105,7 +104,6 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
 
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Briefing band -->
     <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
@@ -149,7 +147,6 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
     <p v-if="loading" class="rise mt-8 font-mono text-sm text-ink-muted">Loading queue…</p>
 
     <template v-else>
-      <!-- Filters: search · status -->
       <div
         v-if="rows.length"
         class="rise flex flex-wrap items-center gap-x-3 gap-y-3"
@@ -197,7 +194,6 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
         </nav>
       </div>
 
-      <!-- Queue, newest submission first -->
       <section v-if="rows.length" class="mt-6 border-t border-ink-subtle">
         <NuxtLink
           v-for="report in filtered"
@@ -251,7 +247,6 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
           </span>
         </NuxtLink>
 
-        <!-- Filters matched nothing -->
         <EmptyState
           v-if="filtered.length === 0"
           :fill="false"
@@ -262,7 +257,6 @@ const memberCount = computed(() => new Set(rows.value.map((r) => r.userName)).si
         </EmptyState>
       </section>
 
-      <!-- Empty state -->
       <EmptyState
         v-else
         class="rise border-t border-ink-subtle"

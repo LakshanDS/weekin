@@ -10,8 +10,7 @@ interface ConfirmState {
   resolve: ((v: boolean) => void) | null
 }
 
-// Awaitable confirmation dialog: `if (await confirm({ title, message })) …`
-// Backed by one <AppConfirmDialog /> mounted in app.vue.
+// Awaitable confirmation dialog backed by one <AppConfirmDialog /> mounted in app.vue.
 export function useConfirm() {
   const state = useState<ConfirmState>('confirm-dialog', () => ({ options: null, resolve: null }))
 
