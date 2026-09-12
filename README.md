@@ -39,7 +39,7 @@ tests/                    Vitest integration tests (RBAC + review cycle)
 
 ### Domain model
 
-- **users** — `MEMBER` or `MANAGER`; self-registrations start `PENDING` until a manager approves them; `token_version` revokes outstanding sessions when a role/status/password changes
+- **users** — `MEMBER` or `MANAGER`; self-registrations start `PENDING` until a manager approves them
 - **projects** — work categories a report can be filed under (optional)
 - **reports** — one per user per week, optionally assigned to a manager who reviews it; status flows `DRAFT → SUBMITTED → NEEDS_CORRECTION → APPROVED`
 - **report_versions** — full content snapshot per version. Draft edits update the unsubmitted version in place; **every submit freezes the version**, so each correction cycle builds visible history
@@ -128,15 +128,15 @@ These exist only after the demo seed (`ALLOW_DEMO_SEED=1 bun run db:seed:demo`) 
 
 The seed builds ~a year of weekly reports per member (3 managers, 10 members, 6 projects) across every workflow status: approvals, one- and two-round correction cycles, awaiting-review queues, drafts, late submissions and leave gaps.
 
-### Production login
+### Deployed instance
 
-`bun run db:seed:prod` creates the production manager account — independent of the demo seed, never wipes data, safe to re-run.
+The public deployment (Cloudflare Workers + Neon Postgres) runs the **demo dataset** — the demo accounts above are the logins for the live URL. Seed it with:
 
-| Role | Email | Password |
-|---|---|---|
-| Manager | `manager@weekin.com` | `3YosakHLZHaDixb4!Aa1` |
+```bash
+NUXT_DATABASE_URL=<prod neon url> ALLOW_DEMO_SEED=1 bun run db:seed:demo
+```
 
-The seed generates six weeks of reports per member across every workflow status, including full correction cycles (v1 → manager comment → v2 → approved), late submissions, drafts, and not-started weeks, so the dashboard is meaningful immediately. Members alternate between the two managers to demo the assigned-manager flow.
+The seed is destructive (wipes all users), so the standalone `db:seed:prod` manager account (`manager@weekin.com`) only exists on a fresh deploy that hasn't been demo-seeded.
 
 ## Feature tour
 
