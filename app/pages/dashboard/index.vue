@@ -60,7 +60,6 @@ async function load() {
 watch(week, load)
 onMounted(load)
 
-// --- week selection ---
 const _today = new Date()
 const todayIso = `${_today.getFullYear()}-${String(_today.getMonth() + 1).padStart(2, '0')}-${String(_today.getDate()).padStart(2, '0')}`
 const currentWeek = mondayOf(todayIso)
@@ -169,7 +168,6 @@ const projectRows = computed(() =>
 
 <template>
   <div>
-    <!-- Briefing band -->
     <section class="border-b border-ink-subtle pt-5" :class="data ? '' : 'pb-6'">
       <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-4 max-sm:flex-nowrap">
         <div class="min-w-0 flex-1">
@@ -193,7 +191,6 @@ const projectRows = computed(() =>
           </p>
         </div>
 
-        <!-- Week selector — raw, right-aligned -->
         <div class="rise flex shrink-0 flex-col items-end gap-1 text-right" style="animation-delay: 0.1s">
           <p class="font-mono text-[13px] font-semibold tracking-[0.15em] uppercase text-ink">
             Week {{ isoWeekOf(week) }}
@@ -240,9 +237,8 @@ const projectRows = computed(() =>
 
     <p v-if="loading && !data" class="mt-8 font-mono text-sm text-ink-muted">Loading dashboard…</p>
 
-    <!-- Mobile: the two wrappers dissolve (display:contents) so all sections interleave as
-         queue → hours by type → throughput → hours by project → status mix → activity (order-*).
-         lg keeps the original main column + side rail. -->
+    <!-- On mobile both wrappers dissolve (display:contents) so the sections interleave by order-*;
+         lg restores the main column + side rail. -->
     <div v-if="data" class="mt-11 grid gap-14 max-lg:flex max-lg:flex-col max-lg:gap-y-11 lg:grid-cols-[1fr_340px]">
       <!-- Main column -->
       <div class="min-w-0 max-lg:contents">

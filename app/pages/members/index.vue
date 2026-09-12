@@ -47,7 +47,6 @@ async function run(action: () => Promise<unknown>) {
   }
 }
 
-// invite form (opens in a modal)
 const showInvite = ref(false)
 const form = ref({ name: '', email: '', password: '', role: 'MEMBER' as 'MEMBER' | 'MANAGER' })
 
@@ -99,7 +98,6 @@ async function cancelSignup(user: UserRow) {
   if (ok) await run(() => $fetch(`/api/users/${user.id}`, { method: 'DELETE' }))
 }
 
-// --- roster filters: search + role tabs (pending signups live in their own queue) ---
 // Filters live in the URL so going back from a member profile restores them.
 const route = useRoute()
 const router = useRouter()
@@ -158,7 +156,6 @@ function resetFilters() {
 
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Briefing band -->
     <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
@@ -209,7 +206,6 @@ function resetFilters() {
     <p v-if="loading" class="rise mt-8 font-mono text-sm text-ink-muted">Loading members…</p>
 
     <template v-else>
-      <!-- Filters: search · role · add member -->
       <div class="rise flex flex-wrap items-center gap-x-3 gap-y-3" style="animation-delay: 0.3s">
         <input
           v-model="search"
@@ -265,7 +261,6 @@ function resetFilters() {
         {{ error }}
       </p>
 
-      <!-- Pending signups awaiting approval -->
       <section v-if="pendingUsers.length" class="rise mt-6">
         <div class="flex items-baseline justify-between gap-4 px-3">
           <p class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">
@@ -321,7 +316,6 @@ function resetFilters() {
         </div>
       </section>
 
-      <!-- Roster -->
       <section class="mt-6 flex flex-1 flex-col">
         <div v-if="filtered.length" class="border-t border-ink-subtle">
           <div
@@ -409,7 +403,6 @@ function resetFilters() {
       </p>
     </template>
 
-    <!-- Invite modal -->
     <Teleport to="body">
       <div
         v-if="showInvite"

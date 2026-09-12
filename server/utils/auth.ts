@@ -4,8 +4,7 @@ import type { H3Event, EventHandlerRequest } from 'h3'
 
 export const SESSION_COOKIE = 'session'
 const SESSION_DAYS = 1
-// Sessions slide: a request past half the token's life re-issues it fresh,
-// so active users never get logged out while idle ones expire a day later.
+// Sessions slide: a request past half the token's life re-issues it, so active users never get logged out.
 const REFRESH_AFTER_SECONDS = 12 * 60 * 60
 
 export interface SessionUser {
@@ -53,15 +52,14 @@ export function clearSessionCookie(event: H3Event) {
   deleteCookie(event, SESSION_COOKIE, { path: '/' })
 }
 
-// Verify the JWT from the cookie. Returns null for anonymous visitors,
-// plus `stale` so the middleware knows when to re-check the DB and re-issue.
+// Verify the JWT from the cookie; null for anonymous. `stale` tells the middleware
+// when to re-check the DB and re-issue.
 export async function getSessionUser(event: H3Event): Promise<(SessionUser & { stale: boolean }) | null> {
   const token = getCookie(event, SESSION_COOKIE)
   if (!token) return null
   try {
     const { payload } = await jwtVerify(token, getSecret(event))
-    // Tokens from before the status claim are treated as stale so their first
-    // request upgrades them to the current format.
+    // Pre-status-claim tokens are stale so their first request upgrades them.
     const stale = !payload.status || Date.now() / 1000 - payload.iat > REFRESH_AFTER_SECONDS
     return {
       id: Number(payload.sub),
@@ -87,7 +85,6 @@ export async function requireManager(event: H3Event): Promise<SessionUser> {
   if (user.role !== 'MANAGER') {
     throw createError({ statusCode: 403, statusMessage: 'Manager access required' })
   }
-  // The global middleware re-checks MANAGER-claimed sessions in the DB on
-  // every request, so demotion or deletion takes effect immediately.
+  // The middleware re-checks MANAGER-claimed sessions against the DB every request.
   return user
 }

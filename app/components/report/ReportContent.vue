@@ -60,7 +60,6 @@ const EYEBROW = 'mb-3 block font-mono text-[10.5px] font-semibold tracking-[0.15
       </div>
     </section>
 
-    <!-- Achievements & blockers -->
     <div class="grid gap-8 md:grid-cols-2">
       <section>
         <h3 :class="EYEBROW">Achievements</h3>

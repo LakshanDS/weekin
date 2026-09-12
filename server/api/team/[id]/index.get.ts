@@ -29,8 +29,8 @@ export default defineEventHandler(async (event) => {
     .where(and(eq(reports.userId, id), ne(reports.status, 'DRAFT')))
     .orderBy(desc(reports.weekStart))
 
-  // Content stats over each report's latest submitted version, fetched in SQL —
-  // only the columns we aggregate cross the wire, not every version's JSONB.
+  // Stats over each report's latest submitted version, fetched in SQL —
+  // only the aggregated columns cross the wire, not every version's JSONB.
   const versions = history.length
     ? await database
         .selectDistinctOn([reportVersions.reportId], {

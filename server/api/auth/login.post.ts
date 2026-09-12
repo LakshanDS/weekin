@@ -3,8 +3,7 @@ import { users } from '../../database/schema'
 import { loginSchema } from '#shared/schemas/auth'
 import { verifyPassword, setSessionCookie } from '../../utils/auth'
 
-// Burn a bcrypt compare for unknown emails so response timing can't reveal
-// whether the address is registered.
+// Burn a bcrypt compare for unknown emails so timing can't reveal registration.
 const DUMMY_HASH = '$2b$10$hCXZ1SzBokBQl78czS60dOOG/5soMIyZdTLO19.A6f0kl34xNI0iq'
 
 export default defineEventHandler(async (event) => {

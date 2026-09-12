@@ -17,8 +17,7 @@ interface ReportRow {
   submittedAt: string | null
 }
 
-// Filters + page live in the URL query, so going back from a report restores
-// the exact filtered view instead of the full list.
+// Filters + page live in the URL query, so back-navigation restores the exact filtered view.
 const route = useRoute()
 const router = useRouter()
 const fromParam = typeof route.query.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(route.query.from) ? route.query.from : ''
@@ -26,13 +25,11 @@ const fromParam = typeof route.query.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.
 const page = ref(Math.max(1, Number(route.query.page) || 1))
 const statusFilter = ref<'' | ReportStatus>((route.query.status as '' | ReportStatus) || '')
 const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
-// Explicit member / project pickers (manager only); the API takes userId / projectId.
 const memberFilter = ref<number | ''>(Number(route.query.userId) || '')
 const projectFilter = ref<number | ''>(Number(route.query.projectId) || '')
 const memberOptions = ref<{ id: number; name: string }[]>([])
 const projectOptions = ref<{ id: number; name: string }[]>([])
 
-// Dropdown lists: leading "All …" entry clears the filter.
 const memberSelectOptions = computed(() => [
   { value: '' as const, label: 'All members' },
   ...memberOptions.value.map((m) => ({ value: m.id, label: m.name })),
@@ -49,8 +46,7 @@ const reports = ref<ReportRow[]>([])
 const total = ref(0)
 // Grand total across all reports; fetched once, unaffected by filters.
 const totalAll = ref(0)
-// Only the first load shows the loading state; later refreshes update in place
-// so the page doesn't replay its entrance animations on every search.
+// Only the first load shows the loading state, so refreshes don't replay entrance animations.
 const loading = ref(true)
 const loaded = ref(false)
 
@@ -63,7 +59,6 @@ const STATUS_OPTIONS: { value: '' | ReportStatus; label: string }[] = [
   { value: 'APPROVED', label: 'Approved' },
 ]
 
-// Label for the filtered-empty message; "weekly" when no status tab is active.
 const filterLabel = computed(() => {
   if (!statusFilter.value) return 'weekly'
   return STATUS_OPTIONS.find((o) => o.value === statusFilter.value)?.label.toLowerCase() ?? 'weekly'
@@ -127,7 +122,6 @@ onMounted(() => {
   })
 })
 
-// Typed search: debounce so we don't hit the API per keystroke.
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 watch(search, () => {
   page.value = 1
@@ -199,7 +193,6 @@ function resetFilters() {
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / 20)))
 const latest = computed(() => reports.value[0] ?? null)
 
-// Desktop column layouts: managers scan by member, members by week.
 // Trailing tracks are fixed-width so columns align across rows.
 const GRID_MANAGER = 'sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.15fr)_minmax(0,1fr)_160px_175px_75px]'
 const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75px]'
@@ -207,7 +200,6 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
 
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Briefing band -->
     <section class="pt-4 pb-5">
       <div class="flex flex-wrap items-start justify-between gap-6 max-sm:flex-nowrap max-sm:gap-x-4">
         <div class="min-w-0 flex-1">
@@ -250,8 +242,7 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
     <p v-if="loading" class="rise mt-8 font-mono text-sm text-ink-muted">Loading reports…</p>
 
     <template v-else>
-      <!-- Filters: search · week · status tabs · new report.
-           Mobile: 2-col grid — selects pair up, week shares a row with the status tabs. -->
+      <!-- On mobile this row becomes a 2-col grid: selects pair up, week shares a row with the tabs. -->
       <div class="rise flex flex-wrap items-center gap-x-3 gap-y-3 max-sm:grid max-sm:grid-cols-2" style="animation-delay: 0.3s">
         <input
           v-model="search"
@@ -323,7 +314,6 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
         </NuxtLink>
       </div>
 
-      <!-- List, newest week first -->
       <section class="mt-6 flex flex-1 flex-col">
         <div v-if="reports.length" class="border-t border-ink-subtle">
           <NuxtLink
@@ -369,7 +359,6 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
           </NuxtLink>
         </div>
 
-        <!-- Empty states -->
         <EmptyState
           v-else-if="total === 0 && !hasActiveFilters"
           icon="+"
@@ -385,7 +374,6 @@ const GRID_MEMBER = 'sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_160px_175px_75p
         </EmptyState>
       </section>
 
-      <!-- Pagination -->
       <div v-if="pageCount > 1" class="mt-5 flex items-center justify-between">
         <button
           :disabled="page <= 1"

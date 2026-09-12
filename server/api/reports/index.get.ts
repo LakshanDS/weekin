@@ -3,8 +3,7 @@ import { alias } from 'drizzle-orm/pg-core'
 import { reports, users, projects, reportVersions } from '../../database/schema'
 import { reportListQuerySchema } from '#shared/schemas/report'
 
-// GET /api/reports — paginated list with filters.
-// Members always see only their own; managers see the whole team.
+// GET /api/reports — paginated list with filters; members see only their own rows.
 const LIKE_WILDCARDS = /[%_]/g
 const managerUsers = alias(users, 'manager_user')
 
@@ -38,8 +37,7 @@ export default defineEventHandler(async (event) => {
   ].filter((f) => f !== undefined)
   const where = filters.length ? and(...filters) : undefined
 
-  // Count skips the manager/project joins — they can't change it. users/
-  // projects are joined only when the text filter references them.
+  // Count skips the manager/project joins (they can't change it); users/projects join only for the text filter.
   let countQuery = database.select({ value: count() }).from(reports).$dynamic()
   if (query.q) {
     countQuery = countQuery

@@ -1,8 +1,6 @@
-// Single global guard: resolves the session, then enforces
-//   public pages   — login/register (redirect authed users home)
-//   protected pages — require a session (redirect to /login?redirect=…)
-//   role pages     — definePageMeta({ role: 'MANAGER' }) restricts by role
-//   pending users  — locked to the /pending waiting screen until approved
+// Single global guard: resolves the session, then —
+// public pages redirect authed users home, protected pages require a session,
+// role pages gate on definePageMeta({ role }), PENDING users are locked to /pending.
 export default defineNuxtRouteMiddleware(async (to) => {
   const { user, fetchMe } = useAuth()
   await fetchMe()

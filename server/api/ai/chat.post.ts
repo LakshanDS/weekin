@@ -10,8 +10,7 @@ const chatSchema = z.object({
   })).max(10).default([]),
 })
 
-// POST /api/ai/chat — manager Q&A over team report data (grounded RAG-lite:
-// the week window's reports are injected as context; the model answers only from it).
+// POST /api/ai/chat — manager Q&A grounded in the week window's reports (answers only from that data).
 export default defineEventHandler(async (event) => {
   const session = await requireManager(event)
   // Each call bills the shared LLM key — keep the burn rate bounded.
@@ -31,8 +30,7 @@ export default defineEventHandler(async (event) => {
     context,
   ].join('\n')
 
-  // No API key configured: fall back to a data-grounded summary so the
-  // feature stays demonstrable offline. Clearly labelled as such.
+  // No API key: fall back to a grounded summary so the feature stays demonstrable offline.
   if (!aiConfigured()) {
     const openBlockers = [...context.matchAll(/key blocker: (.+)$/gm)]
       .map((m) => m[1])

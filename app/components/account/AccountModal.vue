@@ -42,7 +42,6 @@ function cancelNameEdit() {
   nameError.value = ''
 }
 
-// change password form
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -182,7 +181,6 @@ async function submit() {
         <p v-if="loading" class="mt-4 font-mono text-sm text-ink-muted">Loading account…</p>
 
         <template v-else>
-          <!-- Profile -->
           <section class="mt-5">
             <h2 class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">Profile</h2>
             <dl class="mt-2.5 border-y border-ink-subtle">
@@ -245,7 +243,6 @@ async function submit() {
             </dl>
           </section>
 
-          <!-- Change password -->
           <section class="mt-5">
             <h2 class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-ink">Change password</h2>
             <div class="mt-4 grid gap-4">

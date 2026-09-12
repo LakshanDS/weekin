@@ -28,8 +28,7 @@ export async function buildTeamContext(windowWeeks = 6, database: ReturnType<typ
     .where(and(gte(reports.weekStart, windowStart), inArray(reports.userId, members.map((m) => m.id))))
     .orderBy(desc(reports.weekStart))
 
-  // Latest submitted version per report in SQL — only the JSONB we read
-  // crosses the wire, not every historical version.
+  // Latest submitted version per report, in SQL — only the JSONB we read crosses the wire.
   const versions = rows.length
     ? await database
         .selectDistinctOn([reportVersions.reportId], {
@@ -94,9 +93,9 @@ interface LlmMessage {
   tool_call_id?: string
 }
 
-// Chat with tools: executes model-requested tool calls and feeds results back
-// until the model answers in plain text. The final round omits `tools` to force
-// a text answer; tool errors go back to the model as results, not exceptions.
+// Chat with tools: executes model-requested tool calls and feeds results back until
+// the model answers in plain text (the final round omits `tools` to force one).
+// Tool errors go back to the model as results, not exceptions.
 export async function runAgentLoop(system: string, history: ChatMessage[], tools: ToolDef[], maxIterations = 3): Promise<string> {
   const config = useRuntimeConfig()
   const baseUrl = (config.aiBaseUrl || 'https://api.openai.com/v1').replace(/\/$/, '')

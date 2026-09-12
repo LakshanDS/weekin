@@ -3,17 +3,11 @@ import { users } from '../database/schema'
 import { useDatabase } from '../utils/database'
 import { setSessionCookie } from '../utils/auth'
 
-// Attach the authenticated user (if any) to every /api request.
-// Route handlers then just call requireUser() / requireManager().
-//
-// The JWT is verified statelessly; the DB is consulted when the token is
-// stale (past half its life), still marked PENDING, or claims MANAGER —
-// so a manager's demotion or deletion lands on the very next request.
-// Stale tokens are re-issued with fresh claims — sessions slide for
-// active users.
-// Self-registered accounts stay PENDING: their session can only reach
-// /api/auth/* (me/logout) until a manager approves them, and the approval
-// upgrades their cookie on the next request.
+// Attach the session (if any) to every /api request; handlers call requireUser()/requireManager().
+// The JWT is verified statelessly — the DB is hit only for stale tokens, PENDING claims,
+// and MANAGER-claimed tokens, so a manager's demotion/deletion lands on the very next request.
+// Stale tokens are re-issued with fresh claims (sliding sessions); PENDING sessions
+// can only reach /api/auth/* until a manager approves them.
 export default defineEventHandler(async (event) => {
   if (!event.path.startsWith('/api/')) return
   const session = await getSessionUser(event)

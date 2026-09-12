@@ -17,7 +17,6 @@ interface Detail {
 async function load() {
   const res = await $fetch<Detail>(`/api/reports/${reportId}`)
   if (res.report.status !== 'DRAFT' && res.report.status !== 'NEEDS_CORRECTION') {
-    // Only drafts and needs-correction reports are editable
     await router.replace(`/reports/${reportId}`)
   }
   return {
@@ -42,7 +41,6 @@ onMounted(async () => {
 
 <template>
   <div class="mx-auto w-full max-w-4xl">
-    <!-- Briefing band -->
     <section class="flex flex-wrap items-start justify-between gap-6 pt-4 max-sm:flex-nowrap max-sm:gap-x-4">
       <div class="min-w-0 flex-1">
         <NuxtLink
