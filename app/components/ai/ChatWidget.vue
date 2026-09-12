@@ -44,11 +44,6 @@ async function send() {
 function scrollDown() {
   thread.value?.scrollTo({ top: thread.value.scrollHeight })
 }
-
-function reset() {
-  messages.value = []
-  offline.value = false
-}
 </script>
 
 <template>
@@ -60,7 +55,6 @@ function reset() {
           <p v-if="offline" class="mt-0.5 font-mono text-[10px] text-correction">offline mode · no API key</p>
         </div>
         <div class="flex gap-2">
-          <button class="cursor-pointer px-1.5 text-xs text-ink-soft hover:text-ink" title="Clear conversation" @click="reset">×</button>
           <button class="cursor-pointer px-1.5 text-xs text-ink-soft hover:text-ink" @click="open = false">—</button>
         </div>
       </div>
