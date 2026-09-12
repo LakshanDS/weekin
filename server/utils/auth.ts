@@ -3,11 +3,15 @@ import bcrypt from 'bcryptjs'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
 export const SESSION_COOKIE = 'session'
-const SESSION_DAYS = 7
+const SESSION_DAYS = 1
+// Sessions slide: a request past half the token's life re-issues it fresh,
+// so active users never get logged out while idle ones expire a day later.
+const REFRESH_AFTER_SECONDS = 12 * 60 * 60
 
 export interface SessionUser {
   id: number
   role: 'MEMBER' | 'MANAGER'
+  status: 'PENDING' | 'ACTIVE'
 }
 
 function getSecret(event: H3Event<EventHandlerRequest>) {
@@ -27,7 +31,7 @@ export async function verifyPassword(plain: string, hash: string) {
 }
 
 export async function setSessionCookie(event: H3Event, user: SessionUser) {
-  const token = await new SignJWT({ role: user.role })
+  const token = await new SignJWT({ role: user.role, status: user.status })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(String(user.id))
     .setIssuedAt()
@@ -49,13 +53,22 @@ export function clearSessionCookie(event: H3Event) {
   deleteCookie(event, SESSION_COOKIE, { path: '/' })
 }
 
-// Verify the JWT from the cookie. Returns null for anonymous visitors.
-export async function getSessionUser(event: H3Event): Promise<SessionUser | null> {
+// Verify the JWT from the cookie. Returns null for anonymous visitors,
+// plus `stale` so the middleware knows when to re-check the DB and re-issue.
+export async function getSessionUser(event: H3Event): Promise<(SessionUser & { stale: boolean }) | null> {
   const token = getCookie(event, SESSION_COOKIE)
   if (!token) return null
   try {
     const { payload } = await jwtVerify(token, getSecret(event))
-    return { id: Number(payload.sub), role: payload.role as SessionUser['role'] }
+    // Tokens from before the status claim are treated as stale so their first
+    // request upgrades them to the current format.
+    const stale = !payload.status || Date.now() / 1000 - payload.iat > REFRESH_AFTER_SECONDS
+    return {
+      id: Number(payload.sub),
+      role: payload.role as SessionUser['role'],
+      status: (payload.status as SessionUser['status']) ?? 'PENDING',
+      stale,
+    }
   } catch {
     return null
   }
@@ -74,7 +87,7 @@ export async function requireManager(event: H3Event): Promise<SessionUser> {
   if (user.role !== 'MANAGER') {
     throw createError({ statusCode: 403, statusMessage: 'Manager access required' })
   }
-  // The global middleware re-checks status/role in the DB on every /api
-  // request, so demotion or deletion takes effect on the very next request.
+  // The global middleware re-checks MANAGER-claimed sessions in the DB on
+  // every request, so demotion or deletion takes effect immediately.
   return user
 }

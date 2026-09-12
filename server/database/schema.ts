@@ -32,8 +32,6 @@ export const users = pgTable('users', {
   role: userRoleEnum('role').notNull().default('MEMBER'),
   // Default PENDING so an insert path that forgets status can't create an active account.
   status: userStatusEnum('status').notNull().default('PENDING'),
-  // Bumped to revoke all existing sessions (checked at sign-in / per request).
-  tokenVersion: integer('token_version').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

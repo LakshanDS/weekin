@@ -22,6 +22,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' })
   }
 
-  await setSessionCookie(event, { id: user.id, role: user.role })
+  await setSessionCookie(event, { id: user.id, role: user.role, status: user.status })
   return { user: { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status } }
 })
